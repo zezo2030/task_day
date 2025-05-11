@@ -53,4 +53,44 @@ class AppTheme {
       showUnselectedLabels: false,
     ),
   );
+
+  // Dark theme configuration
+  static ThemeData darkTheme = ThemeData.dark().copyWith(
+    scaffoldBackgroundColor: const Color(0xFF1A1A2E),
+    colorScheme: const ColorScheme.dark(
+      primary: Colors.deepPurpleAccent,
+      secondary: Colors.purpleAccent,
+      surface: Color(0xFF2C3E50),
+      background: Color(0xFF1A1A2E),
+    ),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+    ),
+    cardTheme: CardTheme(
+      color: Colors.white.withOpacity(0.05),
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    ),
+    textTheme: TextTheme(
+      headlineLarge: GoogleFonts.poppins(
+        fontSize: 24,
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
+      ),
+      headlineMedium: GoogleFonts.poppins(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
+      ),
+      bodyLarge: GoogleFonts.poppins(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        color: Colors.white,
+      ),
+      bodyMedium: GoogleFonts.poppins(fontSize: 14, color: Colors.white),
+      bodySmall: GoogleFonts.poppins(fontSize: 12, color: Colors.white70),
+    ),
+    iconTheme: const IconThemeData(color: Colors.white),
+  );
 }

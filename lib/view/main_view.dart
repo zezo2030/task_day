@@ -4,8 +4,8 @@ import 'package:fluentui_icons/fluentui_icons.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'home_screen.dart';
-import 'search_screen.dart';
-import 'favorites_screen.dart';
+import 'habits_screen.dart';
+import 'tasks_screen.dart';
 import 'profile_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -21,29 +21,29 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   // List of screens to show
   final List<Widget> _screens = const [
     HomeScreen(),
-    SearchScreen(),
-    FavoritesScreen(),
+    HabitsScreen(),
+    TasksScreen(),
     ProfileScreen(),
   ];
 
   // List of icons for the bottom navigation bar using Fluent icons
   final iconList = <IconData>[
     FluentSystemIcons.ic_fluent_home_regular,
-    FluentSystemIcons.ic_fluent_search_regular,
-    FluentSystemIcons.ic_fluent_heart_regular,
+    FluentSystemIcons.ic_fluent_notebook_regular,
+    FluentSystemIcons.ic_fluent_document_regular,
     FluentSystemIcons.ic_fluent_person_regular,
   ];
 
   // Active icons for the bottom navigation bar
   final activeIconList = <IconData>[
     FluentSystemIcons.ic_fluent_home_filled,
-    FluentSystemIcons.ic_fluent_search_filled,
-    FluentSystemIcons.ic_fluent_heart_filled,
+    FluentSystemIcons.ic_fluent_notebook_filled,
+    FluentSystemIcons.ic_fluent_document_filled,
     FluentSystemIcons.ic_fluent_person_filled,
   ];
 
   // Names for navigation items
-  final List<String> navLabels = ['Home', 'Search', 'Favorites', 'Profile'];
+  final List<String> navLabels = ['Home', 'Habits', 'Tasks', 'Profile'];
 
   // Optional: Add controller for animations if you want to control them
   late AnimationController _fabAnimationController;

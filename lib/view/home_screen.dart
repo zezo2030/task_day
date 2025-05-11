@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:task_day/core/extensions/widget_extensions.dart';
 import 'package:task_day/core/themes/app_theme.dart';
+import 'package:task_day/widgets/habit_card.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -13,10 +14,6 @@ class HomeScreen extends StatelessWidget {
     final String formattedDate = DateFormat(
       'EEEE, MMMM d, yyyy',
     ).format(DateTime.now());
-
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
     return Theme(
       data: AppTheme.darkTheme,
       child: Builder(
@@ -356,25 +353,25 @@ class HomeScreen extends StatelessWidget {
                           scrollDirection: Axis.horizontal,
                           physics: const BouncingScrollPhysics(),
                           children: [
-                            _buildHabitCard(
+                            HabitCard(
                               icon: Icons.water_drop,
                               title: "Water",
                               progress: 0.75,
                               color: Colors.blueAccent,
                             ),
-                            _buildHabitCard(
+                            HabitCard(
                               icon: Icons.directions_walk,
                               title: "Steps",
                               progress: 0.45,
                               color: Colors.orangeAccent,
                             ),
-                            _buildHabitCard(
+                            HabitCard(
                               icon: Icons.bedtime,
                               title: "Sleep",
                               progress: 0.9,
                               color: Colors.purpleAccent,
                             ),
-                            _buildHabitCard(
+                            HabitCard(
                               icon: Icons.book,
                               title: "Reading",
                               progress: 0.3,
@@ -412,64 +409,6 @@ class HomeScreen extends StatelessWidget {
           );
         },
       ),
-    );
-  }
-
-  Widget _buildHabitCard({
-    required IconData icon,
-    required String title,
-    required double progress,
-    required Color color,
-  }) {
-    return Builder(
-      builder: (context) {
-        final theme = Theme.of(context);
-
-        return Container(
-          width: 120.w,
-          margin: EdgeInsets.only(right: 16.w),
-          padding: EdgeInsets.all(16.w),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(20.r),
-            border: Border.all(color: color.withOpacity(0.3), width: 1),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, color: color, size: 28.sp),
-              SizedBox(height: 12.h),
-              Text(
-                title,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              SizedBox(height: 8.h),
-              Stack(
-                children: [
-                  Container(
-                    height: 6.h,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.onSurface.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10.r),
-                    ),
-                  ),
-                  Container(
-                    height: 6.h,
-                    width: (120.w - 32.w) * progress,
-                    decoration: BoxDecoration(
-                      color: color,
-                      borderRadius: BorderRadius.circular(10.r),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }

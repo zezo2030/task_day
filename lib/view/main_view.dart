@@ -6,7 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'home_screen.dart';
 import 'habits_screen.dart';
 import 'tasks_screen.dart';
-import 'profile_screen.dart';
+import 'status_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -23,7 +23,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     HomeScreen(),
     HabitsScreen(),
     TasksScreen(),
-    ProfileScreen(),
+    StatusScreen(),
   ];
 
   // List of icons for the bottom navigation bar using Fluent icons
@@ -31,7 +31,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     FluentSystemIcons.ic_fluent_home_regular,
     FluentSystemIcons.ic_fluent_notebook_regular,
     FluentSystemIcons.ic_fluent_document_regular,
-    FluentSystemIcons.ic_fluent_person_regular,
+    FluentSystemIcons.ic_fluent_status_regular,
   ];
 
   // Active icons for the bottom navigation bar
@@ -39,11 +39,11 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     FluentSystemIcons.ic_fluent_home_filled,
     FluentSystemIcons.ic_fluent_notebook_filled,
     FluentSystemIcons.ic_fluent_document_filled,
-    FluentSystemIcons.ic_fluent_person_filled,
+    FluentSystemIcons.ic_fluent_status_filled,
   ];
 
   // Names for navigation items
-  final List<String> navLabels = ['Home', 'Habits', 'Tasks', 'Profile'];
+  final List<String> navLabels = ['Home', 'Habits', 'Tasks', 'Status'];
 
   // Optional: Add controller for animations if you want to control them
   late AnimationController _fabAnimationController;

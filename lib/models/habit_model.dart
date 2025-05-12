@@ -1,15 +1,13 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 
-enum HabitType { measurable, nonMeasurable }
-
 class HabitModel extends Equatable {
   final String id;
   final String title;
   final String description;
   final IconData icon;
   final Color color;
-  final HabitType type;
+  final bool isMeasurable;
   final int? targetValue; // For measurable habits
   final int? currentValue; // For measurable habits
   final bool? isDone; // For non-measurable habits
@@ -22,7 +20,7 @@ class HabitModel extends Equatable {
     required this.description,
     required this.icon,
     required this.color,
-    required this.type,
+    required this.isMeasurable,
     this.targetValue,
     this.currentValue,
     this.isDone,
@@ -31,11 +29,9 @@ class HabitModel extends Equatable {
   });
 
   double get progress {
-    if (type == HabitType.measurable &&
-        targetValue != null &&
-        targetValue! > 0) {
+    if (isMeasurable && targetValue != null && targetValue! > 0) {
       return (currentValue ?? 0) / targetValue!;
-    } else if (type == HabitType.nonMeasurable) {
+    } else if (!isMeasurable) {
       return isDone == true ? 1.0 : 0.0;
     }
     return 0.0;
@@ -47,7 +43,7 @@ class HabitModel extends Equatable {
     String? description,
     IconData? icon,
     Color? color,
-    HabitType? type,
+    bool? isMeasurable,
     int? targetValue,
     int? currentValue,
     bool? isDone,
@@ -59,7 +55,7 @@ class HabitModel extends Equatable {
     description: description ?? this.description,
     icon: icon ?? this.icon,
     color: color ?? this.color,
-    type: type ?? this.type,
+    isMeasurable: isMeasurable ?? this.isMeasurable,
     targetValue: targetValue ?? this.targetValue,
     currentValue: currentValue ?? this.currentValue,
     isDone: isDone ?? this.isDone,
@@ -74,7 +70,7 @@ class HabitModel extends Equatable {
     description,
     icon,
     color,
-    type,
+    isMeasurable,
     targetValue,
     currentValue,
     isDone,

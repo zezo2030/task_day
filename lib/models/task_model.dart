@@ -7,6 +7,7 @@ class TaskModel extends Equatable {
   final bool isDone;
   final DateTime startDate;
   final DateTime endDate;
+  final int priority; // 0: Low, 1: Medium, 2: High
 
   const TaskModel({
     required this.id,
@@ -15,6 +16,7 @@ class TaskModel extends Equatable {
     required this.isDone,
     required this.startDate,
     required this.endDate,
+    required this.priority,
   });
 
   TaskModel copyWith({
@@ -24,6 +26,7 @@ class TaskModel extends Equatable {
     bool? isDone,
     DateTime? startDate,
     DateTime? endDate,
+    int? priority,
   }) => TaskModel(
     id: id ?? this.id,
     title: title ?? this.title,
@@ -31,6 +34,7 @@ class TaskModel extends Equatable {
     isDone: isDone ?? this.isDone,
     startDate: startDate ?? this.startDate,
     endDate: endDate ?? this.endDate,
+    priority: priority ?? this.priority,
   );
 
   @override
@@ -41,5 +45,6 @@ class TaskModel extends Equatable {
     isDone,
     startDate,
     endDate,
+    priority,
   ];
 }

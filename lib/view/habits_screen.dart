@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fluentui_icons/fluentui_icons.dart';
-import 'package:task_day/core/constants/app_colors.dart';
 import 'package:task_day/models/habit_model.dart';
 import 'package:task_day/widgets/measurable_habit_card.dart';
 import 'package:task_day/widgets/non_measurable_habit_card.dart';
@@ -29,7 +28,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
       description: '8 glasses per day',
       icon: Icons.water_drop,
       color: Colors.blueAccent,
-      type: HabitType.measurable,
+      isMeasurable: true,
       targetValue: 8,
       currentValue: 5,
       createdAt: DateTime.now().subtract(const Duration(days: 20)),
@@ -46,7 +45,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
       description: 'Start day with 10 min meditation',
       icon: Icons.self_improvement,
       color: Colors.teal,
-      type: HabitType.nonMeasurable,
+      isMeasurable: false,
       isDone: true,
       createdAt: DateTime.now().subtract(const Duration(days: 25)),
       completedDates: [
@@ -61,7 +60,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
       description: '10,000 steps daily',
       icon: Icons.directions_walk,
       color: Colors.orangeAccent,
-      type: HabitType.measurable,
+      isMeasurable: true,
       targetValue: 10000,
       currentValue: 6500,
       createdAt: DateTime.now().subtract(const Duration(days: 30)),
@@ -76,7 +75,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
       description: 'Write daily reflections',
       icon: Icons.edit_note,
       color: Colors.deepPurple,
-      type: HabitType.nonMeasurable,
+      isMeasurable: false,
       isDone: false,
       createdAt: DateTime.now().subtract(const Duration(days: 10)),
       completedDates: [
@@ -90,7 +89,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
       description: '20 pages per day',
       icon: Icons.menu_book,
       color: Colors.purpleAccent,
-      type: HabitType.measurable,
+      isMeasurable: true,
       targetValue: 20,
       currentValue: 12,
       createdAt: DateTime.now().subtract(const Duration(days: 15)),
@@ -106,7 +105,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
       description: 'Start with nutritious meal',
       icon: Icons.breakfast_dining,
       color: Colors.green,
-      type: HabitType.nonMeasurable,
+      isMeasurable: false,
       isDone: false,
       createdAt: DateTime.now().subtract(const Duration(days: 5)),
       completedDates: [
@@ -130,7 +129,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
   void _incrementHabitProgress(String habitId) {
     setState(() {
       final habitIndex = _allHabits.indexWhere(
-        (h) => h.id == habitId && h.type == HabitType.measurable,
+        (h) => h.id == habitId && h.isMeasurable == true,
       );
       if (habitIndex != -1) {
         final habit = _allHabits[habitIndex];
@@ -146,7 +145,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
   void _toggleHabitCompletion(String habitId) {
     setState(() {
       final habitIndex = _allHabits.indexWhere(
-        (h) => h.id == habitId && h.type == HabitType.nonMeasurable,
+        (h) => h.id == habitId && h.isMeasurable == false,
       );
       if (habitIndex != -1) {
         final habit = _allHabits[habitIndex];
@@ -412,7 +411,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
                                   ) {
                                     final habit = _allHabits[index];
 
-                                    return habit.type == HabitType.measurable
+                                    return habit.isMeasurable == true
                                         ? MeasurableHabitCard(
                                           habit: habit,
                                           onIncrement:

@@ -24,6 +24,7 @@ class _TasksScreenState extends State<TasksScreen>
       isDone: false,
       startDate: DateTime.now(),
       endDate: DateTime.now().add(const Duration(days: 2)),
+      priority: 0,
     ),
     TaskModel(
       id: '2',
@@ -32,6 +33,7 @@ class _TasksScreenState extends State<TasksScreen>
       isDone: true,
       startDate: DateTime.now().subtract(const Duration(days: 1)),
       endDate: DateTime.now().subtract(const Duration(days: 1)),
+      priority: 1,
     ),
     TaskModel(
       id: '3',
@@ -40,6 +42,7 @@ class _TasksScreenState extends State<TasksScreen>
       isDone: false,
       startDate: DateTime.now(),
       endDate: DateTime.now().add(const Duration(days: 1)),
+      priority: 2,
     ),
     TaskModel(
       id: '4',
@@ -48,6 +51,7 @@ class _TasksScreenState extends State<TasksScreen>
       isDone: false,
       startDate: DateTime.now().add(const Duration(days: 1)),
       endDate: DateTime.now().add(const Duration(days: 3)),
+      priority: 3,
     ),
   ];
 

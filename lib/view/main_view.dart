@@ -3,6 +3,7 @@ import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.da
 import 'package:fluentui_icons/fluentui_icons.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:task_day/view/create_task_screen.dart';
 import 'home_screen.dart';
 import 'habits_screen.dart';
 import 'tasks_screen.dart';
@@ -128,14 +129,10 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
             elevation: 0,
             onPressed: () {
               // Handle FAB press
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Add new task', style: GoogleFonts.poppins()),
-                  backgroundColor: Colors.deepPurpleAccent,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.r),
-                  ),
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CreateTaskScreen(),
                 ),
               );
             },

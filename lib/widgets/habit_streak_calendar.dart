@@ -3,24 +3,75 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 import 'package:task_day/models/habit_model.dart';
 
-class HabitStreakCalendar extends StatelessWidget {
+class HabitStreakCalendar extends StatefulWidget {
   final HabitModel habit;
   final int daysToShow;
 
   const HabitStreakCalendar({
-    Key? key,
+    super.key,
     required this.habit,
     this.daysToShow = 7,
-  }) : super(key: key);
+  });
+
+  @override
+  State<HabitStreakCalendar> createState() => _HabitStreakCalendarState();
+}
+
+class _HabitStreakCalendarState extends State<HabitStreakCalendar> {
+  late final ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+
+    // Use post-frame callback to ensure rendering is complete
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToToday();
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToToday() {
+    // Calculate position to center today's date
+    final itemWidth = 62.w; // 50.w + 12.w right margin
+    final todayIndex = widget.daysToShow - 1; // Today is last in the list
+    final screenWidth = MediaQuery.of(context).size.width;
+    final scrollPosition =
+        (todayIndex * itemWidth) - (screenWidth / 2) + (itemWidth / 2);
+
+    // Ensure we don't scroll past boundaries
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final targetScroll = scrollPosition.clamp(0.0, maxScroll);
+
+    _scrollController.animateTo(
+      targetScroll,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final today = DateTime.now();
-    final dates = List.generate(
-      daysToShow,
-      (index) => today.subtract(Duration(days: daysToShow - 1 - index)),
-    );
+
+    // Generate dates with today in the center instead of at the end
+    final halfDays = (widget.daysToShow ~/ 2);
+    final dates = List.generate(widget.daysToShow, (index) {
+      if (index < halfDays) {
+        // Days before today
+        return today.subtract(Duration(days: halfDays - index));
+      } else {
+        // Today and days after
+        return today.add(Duration(days: index - halfDays));
+      }
+    });
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -39,10 +90,11 @@ class HabitStreakCalendar extends StatelessWidget {
           height: 90.h,
           padding: EdgeInsets.symmetric(vertical: 12.h),
           decoration: BoxDecoration(
-            color: habit.color.withOpacity(0.05),
+            color: widget.habit.color.withOpacity(0.05),
             borderRadius: BorderRadius.circular(16.r),
           ),
           child: ListView.builder(
+            controller: _scrollController,
             scrollDirection: Axis.horizontal,
             itemCount: dates.length,
             padding: EdgeInsets.symmetric(horizontal: 16.w),
@@ -52,7 +104,7 @@ class HabitStreakCalendar extends StatelessWidget {
               final isToday =
                   DateFormat('yyyy-MM-dd').format(date) ==
                   DateFormat('yyyy-MM-dd').format(today);
-              final isCompleted = habit.completedDates.any(
+              final isCompleted = widget.habit.completedDates.any(
                 (completedDate) =>
                     DateFormat('yyyy-MM-dd').format(completedDate) ==
                     DateFormat('yyyy-MM-dd').format(date),
@@ -69,7 +121,7 @@ class HabitStreakCalendar extends StatelessWidget {
                       style: theme.textTheme.bodySmall?.copyWith(
                         color:
                             isToday
-                                ? habit.color
+                                ? widget.habit.color
                                 : theme.textTheme.bodySmall?.color,
                         fontWeight:
                             isToday ? FontWeight.bold : FontWeight.normal,
@@ -82,14 +134,17 @@ class HabitStreakCalendar extends StatelessWidget {
                       decoration: BoxDecoration(
                         color:
                             isCompleted
-                                ? habit.color
+                                ? widget.habit.color
                                 : isToday
-                                ? habit.color.withOpacity(0.1)
+                                ? widget.habit.color.withOpacity(0.1)
                                 : theme.colorScheme.onSurface.withOpacity(0.05),
                         shape: BoxShape.circle,
                         border:
                             isToday && !isCompleted
-                                ? Border.all(color: habit.color, width: 2)
+                                ? Border.all(
+                                  color: widget.habit.color,
+                                  width: 2,
+                                )
                                 : null,
                       ),
                       child: Center(
@@ -100,7 +155,7 @@ class HabitStreakCalendar extends StatelessWidget {
                                 isCompleted
                                     ? Colors.white
                                     : isToday
-                                    ? habit.color
+                                    ? widget.habit.color
                                     : theme.textTheme.bodyMedium?.color,
                             fontWeight:
                                 isToday ? FontWeight.bold : FontWeight.normal,

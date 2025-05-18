@@ -61,7 +61,6 @@ class AppTheme {
       primary: Colors.deepPurpleAccent,
       secondary: Colors.purpleAccent,
       surface: Color(0xFF2C3E50),
-      background: Color(0xFF1A1A2E),
     ),
     appBarTheme: const AppBarTheme(
       backgroundColor: Colors.transparent,

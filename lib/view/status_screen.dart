@@ -95,7 +95,7 @@ class _StatusScreenState extends State<StatusScreen>
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [colorScheme.surface, colorScheme.background],
+                  colors: [colorScheme.surface, colorScheme.surface],
                 ),
               ),
               child: SafeArea(

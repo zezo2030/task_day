@@ -2,16 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:task_day/models/habit_model.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
+import 'package:task_day/view/habit_details_screen.dart';
 
 class MeasurableHabitCard extends StatelessWidget {
   final HabitModel habit;
   final VoidCallback onIncrement;
 
   const MeasurableHabitCard({
-    Key? key,
+    super.key,
     required this.habit,
     required this.onIncrement,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +37,14 @@ class MeasurableHabitCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(24.r),
-          onTap: () {}, // For detailed view
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => HabitDetailsScreen(habit: habit),
+              ),
+            );
+          }, // For detailed view
           child: Padding(
             padding: EdgeInsets.all(16.sp),
             child: Row(

@@ -4,13 +4,16 @@ import 'package:fluentui_icons/fluentui_icons.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:task_day/view/create_task_screen.dart';
+import 'package:go_router/go_router.dart';
 import 'home_screen.dart';
 import 'habits_screen.dart';
 import 'tasks_screen.dart';
 import 'status_screen.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final String? tab;
+
+  const MainScreen({super.key, this.tab});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -57,6 +60,14 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+
+    // Set the initial tab based on the URL parameter if available
+    if (widget.tab != null) {
+      int? tabIndex = int.tryParse(widget.tab!);
+      if (tabIndex != null && tabIndex >= 0 && tabIndex < _screens.length) {
+        _bottomNavIndex = tabIndex;
+      }
+    }
 
     _fabAnimationController = AnimationController(
       duration: const Duration(milliseconds: 500),
@@ -125,6 +136,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
             ],
           ),
           child: FloatingActionButton(
+            heroTag: 'mainScreenFAB',
             backgroundColor: Colors.transparent,
             elevation: 0,
             onPressed: () {
@@ -183,7 +195,11 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
             notchSmoothness: NotchSmoothness.softEdge,
             leftCornerRadius: 24,
             rightCornerRadius: 24,
-            onTap: (index) => setState(() => _bottomNavIndex = index),
+            onTap: (index) {
+              setState(() => _bottomNavIndex = index);
+              // Update the URL without full page reload
+              context.go('/?tab=$index');
+            },
             height: 70.h,
             splashColor: Colors.purpleAccent.withOpacity(0.3),
             splashSpeedInMilliseconds: 300,

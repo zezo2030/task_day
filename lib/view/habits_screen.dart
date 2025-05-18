@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fluentui_icons/fluentui_icons.dart';
+import 'package:go_router/go_router.dart';
+import 'package:task_day/controller/cubit/habit_cubit.dart';
 import 'package:task_day/models/habit_model.dart';
 import 'package:task_day/widgets/measurable_habit_card.dart';
 import 'package:task_day/widgets/non_measurable_habit_card.dart';
@@ -15,105 +18,43 @@ class HabitsScreen extends StatefulWidget {
   State<HabitsScreen> createState() => _HabitsScreenState();
 }
 
-class _HabitsScreenState extends State<HabitsScreen> {
+class _HabitsScreenState extends State<HabitsScreen>
+    with SingleTickerProviderStateMixin {
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
       GlobalKey<RefreshIndicatorState>();
+  late AnimationController _animationController;
 
   // Sample data for demonstration - combined list for all habits
-  final List<HabitModel> _allHabits = [
-    // Measurable habits
-    HabitModel(
-      id: '1',
-      title: 'Drink Water',
-      description: '8 glasses per day',
-      icon: Icons.water_drop,
-      color: Colors.blueAccent,
-      isMeasurable: true,
-      targetValue: 8,
-      currentValue: 5,
-      createdAt: DateTime.now().subtract(const Duration(days: 20)),
-      completedDates: [
-        DateTime.now().subtract(const Duration(days: 1)),
-        DateTime.now().subtract(const Duration(days: 2)),
-        DateTime.now().subtract(const Duration(days: 4)),
-      ],
-    ),
-    // Non-measurable habit
-    HabitModel(
-      id: '4',
-      title: 'Morning Meditation',
-      description: 'Start day with 10 min meditation',
-      icon: Icons.self_improvement,
-      color: Colors.teal,
-      isMeasurable: false,
-      isDone: true,
-      createdAt: DateTime.now().subtract(const Duration(days: 25)),
-      completedDates: [
-        DateTime.now(),
-        DateTime.now().subtract(const Duration(days: 1)),
-        DateTime.now().subtract(const Duration(days: 2)),
-      ],
-    ),
-    HabitModel(
-      id: '2',
-      title: 'Walk Steps',
-      description: '10,000 steps daily',
-      icon: Icons.directions_walk,
-      color: Colors.orangeAccent,
-      isMeasurable: true,
-      targetValue: 10000,
-      currentValue: 6500,
-      createdAt: DateTime.now().subtract(const Duration(days: 30)),
-      completedDates: [
-        DateTime.now().subtract(const Duration(days: 1)),
-        DateTime.now().subtract(const Duration(days: 3)),
-      ],
-    ),
-    HabitModel(
-      id: '5',
-      title: 'Journaling',
-      description: 'Write daily reflections',
-      icon: Icons.edit_note,
-      color: Colors.deepPurple,
-      isMeasurable: false,
-      isDone: false,
-      createdAt: DateTime.now().subtract(const Duration(days: 10)),
-      completedDates: [
-        DateTime.now().subtract(const Duration(days: 1)),
-        DateTime.now().subtract(const Duration(days: 3)),
-      ],
-    ),
-    HabitModel(
-      id: '3',
-      title: 'Read Book',
-      description: '20 pages per day',
-      icon: Icons.menu_book,
-      color: Colors.purpleAccent,
-      isMeasurable: true,
-      targetValue: 20,
-      currentValue: 12,
-      createdAt: DateTime.now().subtract(const Duration(days: 15)),
-      completedDates: [
-        DateTime.now().subtract(const Duration(days: 2)),
-        DateTime.now().subtract(const Duration(days: 3)),
-        DateTime.now().subtract(const Duration(days: 4)),
-      ],
-    ),
-    HabitModel(
-      id: '6',
-      title: 'Healthy Breakfast',
-      description: 'Start with nutritious meal',
-      icon: Icons.breakfast_dining,
-      color: Colors.green,
-      isMeasurable: false,
-      isDone: false,
-      createdAt: DateTime.now().subtract(const Duration(days: 5)),
-      completedDates: [
-        DateTime.now().subtract(const Duration(days: 2)),
-        DateTime.now().subtract(const Duration(days: 3)),
-      ],
-    ),
-  ];
+  final List<HabitModel> _allHabits = [];
+
+  @override
+  void initState() {
+    super.initState();
+
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    )..forward();
+
+    // Load habits once when screen is created
+    _loadHabits();
+  }
+
+  // Separate method to load habits
+  void _loadHabits() {
+    // Small delay to ensure widget is properly mounted
+    Future.microtask(() {
+      if (mounted) {
+        context.read<HabitCubit>().getHabits();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   Future<void> _refreshData() async {
     // Simulate API call
@@ -121,54 +62,43 @@ class _HabitsScreenState extends State<HabitsScreen> {
 
     if (!mounted) return;
 
-    setState(() {
-      // Refresh data if needed
-    });
+    // Refresh habits by calling the cubit
+    context.read<HabitCubit>().getHabits();
   }
 
   void _incrementHabitProgress(String habitId) {
-    setState(() {
-      final habitIndex = _allHabits.indexWhere(
-        (h) => h.id == habitId && h.isMeasurable == true,
-      );
-      if (habitIndex != -1) {
-        final habit = _allHabits[habitIndex];
-        if ((habit.currentValue ?? 0) < (habit.targetValue ?? 0)) {
-          _allHabits[habitIndex] = habit.copyWith(
-            currentValue: (habit.currentValue ?? 0) + 1,
-          );
-        }
+    // Find the habit in _allHabits
+    final habitIndex = _allHabits.indexWhere(
+      (h) => h.id == habitId && h.isMeasurable == true,
+    );
+
+    if (habitIndex != -1) {
+      final habit = _allHabits[habitIndex];
+      // Only increment if not already at the target
+      if ((habit.currentValue ?? 0) < (habit.targetValue ?? 0)) {
+        // Call the HabitCubit to update and persist the habit
+        context.read<HabitCubit>().completeHabit(habit);
       }
-    });
+    }
   }
 
   void _toggleHabitCompletion(String habitId) {
-    setState(() {
-      final habitIndex = _allHabits.indexWhere(
-        (h) => h.id == habitId && h.isMeasurable == false,
-      );
-      if (habitIndex != -1) {
-        final habit = _allHabits[habitIndex];
-        final newIsDone = !(habit.isDone ?? false);
+    // Find the habit in _allHabits
+    final habitIndex = _allHabits.indexWhere(
+      (h) => h.id == habitId && h.isMeasurable == false,
+    );
 
-        // Update completedDates list if newly completed
-        List<DateTime> newCompletedDates = List.from(habit.completedDates);
-        if (newIsDone &&
-            !habit.completedDates.any(
-              (date) =>
-                  DateTime.now().day == date.day &&
-                  DateTime.now().month == date.month &&
-                  DateTime.now().year == date.year,
-            )) {
-          newCompletedDates.add(DateTime.now());
-        }
+    if (habitIndex != -1) {
+      final habit = _allHabits[habitIndex];
 
-        _allHabits[habitIndex] = habit.copyWith(
-          isDone: newIsDone,
-          completedDates: newCompletedDates,
-        );
+      // If habit is already marked as done, reset it
+      if (habit.isDone == true) {
+        context.read<HabitCubit>().resetHabit(habit);
+      } else {
+        // Otherwise, mark it as completed
+        context.read<HabitCubit>().completeHabit(habit);
       }
-    });
+    }
   }
 
   @override
@@ -184,38 +114,298 @@ class _HabitsScreenState extends State<HabitsScreen> {
           final colorScheme = theme.colorScheme;
 
           return Scaffold(
-            body: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [colorScheme.surface, colorScheme.background],
-                ),
-              ),
-              child: RefreshIndicator(
-                key: _refreshIndicatorKey,
-                color: colorScheme.secondary,
-                onRefresh: _refreshData,
-                child: SafeArea(
-                  child: CustomScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    slivers: [
-                      // Simple header
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.all(20.w),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // App header with title and profile
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+            body: BlocConsumer<HabitCubit, HabitState>(
+              listener: (context, state) {
+                if (state is HabitError) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(state.toString())));
+                } else if (state is HabitCompleted ||
+                    state is HabitUpdated ||
+                    state is HabitDeleted ||
+                    state is HabitAdded) {
+                  // Refresh the habits list after any habit state change
+                  context.read<HabitCubit>().getHabits();
+                }
+              },
+              builder: (context, state) {
+                if (state is HabitsLoaded) {
+                  _allHabits.clear();
+                  _allHabits.addAll(state.habits);
+                }
+                return RefreshIndicator(
+                  key: _refreshIndicatorKey,
+                  color: colorScheme.secondary,
+                  onRefresh: _refreshData,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [colorScheme.surface, colorScheme.surface],
+                      ),
+                    ),
+                    child: SafeArea(
+                      child: CustomScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        slivers: [
+                          // Simple header
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: EdgeInsets.all(20.w),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  // App header with title and profile
                                   Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: EdgeInsets.all(10.sp),
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                colors: [
+                                                  colorScheme.secondary,
+                                                  colorScheme.primary,
+                                                ],
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(15.r),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: colorScheme.primary
+                                                      .withOpacity(0.3),
+                                                  blurRadius: 10,
+                                                  spreadRadius: 2,
+                                                ),
+                                              ],
+                                            ),
+                                            child: Icon(
+                                              Icons.auto_awesome,
+                                              color: Colors.white,
+                                              size: 24.sp,
+                                            ),
+                                          ),
+                                          SizedBox(width: 12.w),
+                                          AnimatedBuilder(
+                                            animation: _animationController,
+                                            builder: (context, child) {
+                                              return Transform.translate(
+                                                offset: Offset(
+                                                  0,
+                                                  (1 -
+                                                          _animationController
+                                                              .value) *
+                                                      20,
+                                                ),
+                                                child: Opacity(
+                                                  opacity:
+                                                      _animationController
+                                                          .value,
+                                                  child: Text(
+                                                    'Magic Habits',
+                                                    style: GoogleFonts.poppins(
+                                                      fontSize: 32.sp,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      foreground:
+                                                          Paint()
+                                                            ..shader =
+                                                                LinearGradient(
+                                                                  colors: [
+                                                                    Colors
+                                                                        .white,
+                                                                    colorScheme
+                                                                        .secondary,
+                                                                  ],
+                                                                ).createShader(
+                                                                  Rect.fromLTWH(
+                                                                    0,
+                                                                    0,
+                                                                    200.w,
+                                                                    70.h,
+                                                                  ),
+                                                                ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ],
+                                      ),
                                       Container(
-                                        padding: EdgeInsets.all(10.sp),
+                                        height: 42.h,
+                                        width: 42.w,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              colorScheme.secondary.withOpacity(
+                                                0.7,
+                                              ),
+                                              colorScheme.primary.withOpacity(
+                                                0.7,
+                                              ),
+                                            ],
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: colorScheme.primary
+                                                  .withOpacity(0.2),
+                                              blurRadius: 8,
+                                              spreadRadius: 1,
+                                            ),
+                                          ],
+                                        ),
+                                        child: Icon(
+                                          Icons.filter_list_rounded,
+                                          color: Colors.white,
+                                          size: 20.sp,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: 20.h),
+
+                                  // Magical stats section - apply animation
+                                  AnimatedBuilder(
+                                    animation: _animationController,
+                                    builder: (context, child) {
+                                      return Transform.translate(
+                                        offset: Offset(
+                                          0,
+                                          (1 - _animationController.value) * 30,
+                                        ),
+                                        child: Opacity(
+                                          opacity: _animationController.value,
+                                          child: child,
+                                        ),
+                                      );
+                                    },
+                                    child: Container(
+                                      padding: EdgeInsets.all(20.sp),
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            colorScheme.primary.withOpacity(
+                                              0.7,
+                                            ),
+                                            colorScheme.surface.withOpacity(
+                                              0.7,
+                                            ),
+                                          ],
+                                        ),
+                                        borderRadius: BorderRadius.circular(
+                                          20.r,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: colorScheme.primary
+                                                .withOpacity(0.2),
+                                            blurRadius: 15,
+                                            spreadRadius: 5,
+                                          ),
+                                        ],
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Build your ideal future, one habit at a time',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 14.sp,
+                                              color: Colors.white,
+                                              height: 1.5,
+                                            ),
+                                          ),
+                                          SizedBox(height: 16.h),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              _buildInfoCard(
+                                                title: 'Total Habits',
+                                                value: '${_allHabits.length}',
+                                                icon:
+                                                    FluentSystemIcons
+                                                        .ic_fluent_list_filled,
+                                                isSmallScreen: isSmallScreen,
+                                                color: colorScheme.secondary,
+                                              ),
+                                              Container(
+                                                height: 40.h,
+                                                width: 1,
+                                                color: Colors.white.withOpacity(
+                                                  0.2,
+                                                ),
+                                              ),
+                                              _buildInfoCard(
+                                                title: 'Completed',
+                                                value:
+                                                    '${_allHabits.where((h) => h.completedDates.any((date) => DateTime.now().day == date.day && DateTime.now().month == date.month && DateTime.now().year == date.year)).length}',
+                                                icon:
+                                                    FluentSystemIcons
+                                                        .ic_fluent_checkmark_filled,
+                                                isSmallScreen: isSmallScreen,
+                                                color: Colors.green,
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          // Habits Section Title - animated
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: EdgeInsets.fromLTRB(
+                                20.w,
+                                10.h,
+                                20.w,
+                                16.h,
+                              ),
+                              child: AnimatedBuilder(
+                                animation: _animationController,
+                                builder: (context, child) {
+                                  return Transform.translate(
+                                    offset: Offset(
+                                      (1 - _animationController.value) * 20,
+                                      0,
+                                    ),
+                                    child: Opacity(
+                                      opacity: _animationController.value,
+                                      child: child,
+                                    ),
+                                  );
+                                },
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'All Habits',
+                                      style: theme.textTheme.headlineMedium,
+                                    ),
+                                    GestureDetector(
+                                      onTap: () {
+                                        // Add your onTap logic here
+                                        context.go("/create-habit");
+                                      },
+                                      child: Container(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 12.w,
+                                          vertical: 8.h,
+                                        ),
                                         decoration: BoxDecoration(
                                           gradient: LinearGradient(
                                             colors: [
@@ -230,212 +420,165 @@ class _HabitsScreenState extends State<HabitsScreen> {
                                             BoxShadow(
                                               color: colorScheme.primary
                                                   .withOpacity(0.3),
-                                              blurRadius: 10,
-                                              spreadRadius: 2,
+                                              blurRadius: 8,
+                                              spreadRadius: 1,
+                                              offset: const Offset(0, 2),
                                             ),
                                           ],
                                         ),
-                                        child: Icon(
-                                          Icons.auto_awesome,
-                                          color: Colors.white,
-                                          size: 24.sp,
-                                        ),
-                                      ),
-                                      SizedBox(width: 12.w),
-                                      Text(
-                                        'Magic Habits',
-                                        style: theme.textTheme.headlineLarge,
-                                      ),
-                                    ],
-                                  ),
-                                  Container(
-                                    height: 42.h,
-                                    width: 42.w,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          colorScheme.secondary.withOpacity(
-                                            0.7,
-                                          ),
-                                          colorScheme.primary.withOpacity(0.7),
-                                        ],
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: colorScheme.primary
-                                              .withOpacity(0.2),
-                                          blurRadius: 8,
-                                          spreadRadius: 1,
-                                        ),
-                                      ],
-                                    ),
-                                    child: Icon(
-                                      Icons.filter_list_rounded,
-                                      color: Colors.white,
-                                      size: 20.sp,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 20.h),
-
-                              // Magical stats section
-                              Container(
-                                padding: EdgeInsets.all(20.sp),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      colorScheme.primary.withOpacity(0.7),
-                                      colorScheme.surface.withOpacity(0.7),
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(20.r),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: colorScheme.primary.withOpacity(
-                                        0.2,
-                                      ),
-                                      blurRadius: 15,
-                                      spreadRadius: 5,
-                                    ),
-                                  ],
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Build your ideal future, one habit at a time',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 14.sp,
-                                        color: Colors.white,
-                                        height: 1.5,
-                                      ),
-                                    ),
-                                    SizedBox(height: 16.h),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        _buildInfoCard(
-                                          title: 'Total Habits',
-                                          value: '${_allHabits.length}',
-                                          icon:
-                                              FluentSystemIcons
-                                                  .ic_fluent_list_filled,
-                                          isSmallScreen: isSmallScreen,
-                                          color: colorScheme.secondary,
-                                        ),
-                                        Container(
-                                          height: 40.h,
-                                          width: 1,
-                                          color: Colors.white.withOpacity(0.2),
-                                        ),
-                                        _buildInfoCard(
-                                          title: 'Completed',
-                                          value:
-                                              '${_allHabits.where((h) => h.completedDates.any((date) => DateTime.now().day == date.day && DateTime.now().month == date.month && DateTime.now().year == date.year)).length}',
-                                          icon:
-                                              FluentSystemIcons
-                                                  .ic_fluent_checkmark_filled,
-                                          isSmallScreen: isSmallScreen,
-                                          color: Colors.green,
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // Habits Section Title
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.fromLTRB(20.w, 10.h, 20.w, 16.h),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'All Habits',
-                                style: theme.textTheme.headlineMedium,
-                              ),
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.auto_awesome_mosaic,
-                                    color: Colors.amberAccent,
-                                    size: 20.sp,
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // Streak Calendar
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16.w),
-                          child:
-                              _allHabits.isNotEmpty
-                                  ? HabitStreakCalendar(
-                                    habit: _allHabits.first,
-                                    daysToShow: isSmallScreen ? 5 : 7,
-                                  )
-                                  : SizedBox(
-                                    height: 20.h,
-                                  ), // Show empty space if no habits
-                        ),
-                      ),
-
-                      // Habits List
-                      SliverPadding(
-                        padding: EdgeInsets.all(16.sp),
-                        sliver:
-                            _allHabits.isEmpty
-                                ? SliverFillRemaining(
-                                  child: _buildEmptyState(
-                                    'No habits yet',
-                                    'Add your first habit to start building your perfect routine',
-                                    colorScheme,
-                                  ),
-                                )
-                                : SliverList(
-                                  delegate: SliverChildBuilderDelegate((
-                                    context,
-                                    index,
-                                  ) {
-                                    final habit = _allHabits[index];
-
-                                    return habit.isMeasurable == true
-                                        ? MeasurableHabitCard(
-                                          habit: habit,
-                                          onIncrement:
-                                              () => _incrementHabitProgress(
-                                                habit.id,
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.add,
+                                              color: Colors.white,
+                                              size: 20.sp,
+                                            ),
+                                            SizedBox(width: 6.w),
+                                            Text(
+                                              'New Habit',
+                                              style: GoogleFonts.poppins(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 14.sp,
                                               ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // Streak Calendar - animated
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: EdgeInsets.fromLTRB(0, 8.h, 0, 16.h),
+                              child: AnimatedBuilder(
+                                animation: _animationController,
+                                builder: (context, child) {
+                                  return Transform.scale(
+                                    scale: _animationController.value,
+                                    child: Opacity(
+                                      opacity: _animationController.value,
+                                      child: child,
+                                    ),
+                                  );
+                                },
+                                child:
+                                    _allHabits.isNotEmpty
+                                        ? HabitStreakCalendar(
+                                          habit: _allHabits.first,
+                                          daysToShow:
+                                              7, // Always show 7 days regardless of screen size
                                         )
-                                        : NonMeasurableHabitCard(
-                                          habit: habit,
-                                          onToggle:
-                                              () => _toggleHabitCompletion(
-                                                habit.id,
-                                              ),
-                                        );
-                                  }, childCount: _allHabits.length),
-                                ),
-                      ),
+                                        : SizedBox(
+                                          height: 20.h,
+                                        ), // Show empty space if no habits
+                              ),
+                            ),
+                          ),
 
-                      // Bottom padding
-                      SliverToBoxAdapter(child: SizedBox(height: 80.h)),
-                    ],
+                          // Habits List - with animation
+                          SliverPadding(
+                            padding: EdgeInsets.all(16.sp),
+                            sliver:
+                                _allHabits.isEmpty
+                                    ? SliverFillRemaining(
+                                      child: AnimatedBuilder(
+                                        animation: _animationController,
+                                        builder: (context, child) {
+                                          return Transform.scale(
+                                            scale: _animationController.value,
+                                            child: Opacity(
+                                              opacity:
+                                                  _animationController.value,
+                                              child: child,
+                                            ),
+                                          );
+                                        },
+                                        child: _buildEmptyState(
+                                          'No habits yet',
+                                          'Add your first habit to start building your perfect routine',
+                                          colorScheme,
+                                        ),
+                                      ),
+                                    )
+                                    : SliverList(
+                                      delegate: SliverChildBuilderDelegate((
+                                        context,
+                                        index,
+                                      ) {
+                                        final habit = _allHabits[index];
+
+                                        // Staggered animation effect
+                                        final itemAnimation = Tween<double>(
+                                          begin: 0.0,
+                                          end: 1.0,
+                                        ).animate(
+                                          CurvedAnimation(
+                                            parent: _animationController,
+                                            curve: Interval(
+                                              (0.1 + 0.1 * index).clamp(
+                                                0.0,
+                                                0.9,
+                                              ), // Staggered start, clamped
+                                              (0.6 + 0.1 * index).clamp(
+                                                0.0,
+                                                1.0,
+                                              ), // Staggered end, clamped to max 1.0
+                                              curve: Curves.easeOutQuart,
+                                            ),
+                                          ),
+                                        );
+
+                                        return AnimatedBuilder(
+                                          animation: itemAnimation,
+                                          builder: (context, child) {
+                                            return Transform.translate(
+                                              offset: Offset(
+                                                0,
+                                                (1 - itemAnimation.value) * 50,
+                                              ),
+                                              child: Opacity(
+                                                opacity: itemAnimation.value,
+                                                child: child,
+                                              ),
+                                            );
+                                          },
+                                          child:
+                                              habit.isMeasurable == true
+                                                  ? MeasurableHabitCard(
+                                                    habit: habit,
+                                                    onIncrement:
+                                                        () =>
+                                                            _incrementHabitProgress(
+                                                              habit.id,
+                                                            ),
+                                                  )
+                                                  : NonMeasurableHabitCard(
+                                                    habit: habit,
+                                                    onToggle:
+                                                        () =>
+                                                            _toggleHabitCompletion(
+                                                              habit.id,
+                                                            ),
+                                                  ),
+                                        );
+                                      }, childCount: _allHabits.length),
+                                    ),
+                          ),
+
+                          // Bottom padding
+                          SliverToBoxAdapter(child: SizedBox(height: 80.h)),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
             floatingActionButton: Container(
               height: 64.h,
@@ -454,10 +597,11 @@ class _HabitsScreenState extends State<HabitsScreen> {
                 ],
               ),
               child: FloatingActionButton(
+                heroTag: 'habitsScreenFAB',
                 backgroundColor: Colors.transparent,
                 elevation: 0,
                 onPressed: () {
-                  // Add new habit
+                  context.go("/create-habit");
                 },
                 child: Icon(Icons.add, color: Colors.white, size: 32.sp),
               ),

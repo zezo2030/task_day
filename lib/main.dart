@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:task_day/view/main_view.dart';
 import 'package:task_day/core/themes/app_theme.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:task_day/services/hive_service.dart';
+import 'package:task_day/core/router/app_route.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:task_day/controller/cubit/habit_cubit.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Hive
+  HiveService.init();
   runApp(const MainApp());
 }
 
@@ -17,10 +24,18 @@ class MainApp extends StatelessWidget {
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
-        return MaterialApp(
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.themeData,
-          home: const MainScreen(),
+        return MultiBlocProvider(
+          providers: [
+            BlocProvider<HabitCubit>(
+              create: (context) => HabitCubit()..getHabits(),
+            ),
+            // Add more BlocProviders here as needed
+          ],
+          child: MaterialApp.router(
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.themeData,
+            routerConfig: AppRouter.router,
+          ),
         );
       },
     );

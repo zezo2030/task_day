@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:task_day/models/habit_model.dart';
+import 'package:task_day/view/habit_details_screen.dart';
 
 class NonMeasurableHabitCard extends StatelessWidget {
   final HabitModel habit;
   final VoidCallback onToggle;
 
   const NonMeasurableHabitCard({
-    Key? key,
+    super.key,
     required this.habit,
     required this.onToggle,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +36,14 @@ class NonMeasurableHabitCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(24.r),
-          onTap: () {}, // For detailed view
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => HabitDetailsScreen(habit: habit),
+              ),
+            );
+          }, // For detailed view
           child: Padding(
             padding: EdgeInsets.all(16.sp),
             child: Row(
@@ -86,10 +94,10 @@ class NonMeasurableHabitCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(6.r),
                       ),
                       side: BorderSide(color: habit.color, width: 2),
-                      fillColor: MaterialStateProperty.resolveWith<Color>((
-                        Set<MaterialState> states,
+                      fillColor: WidgetStateProperty.resolveWith<Color>((
+                        Set<WidgetState> states,
                       ) {
-                        if (states.contains(MaterialState.selected)) {
+                        if (states.contains(WidgetState.selected)) {
                           return habit.color;
                         }
                         return Colors.transparent;

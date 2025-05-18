@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:fluentui_icons/fluentui_icons.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -19,12 +18,15 @@ class _CreateTaskScreenState extends State<CreateTaskScreen>
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final FocusNode _titleFocus = FocusNode();
+  final FocusNode _descriptionFocus = FocusNode();
+  final _subtaskController = TextEditingController();
+  final FocusNode _subtaskFocus = FocusNode();
 
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now().add(const Duration(days: 1));
   int _priority = 0; // 0: Low, 1: Medium, 2: High
-  final FocusNode _titleFocus = FocusNode();
-  final FocusNode _descriptionFocus = FocusNode();
+  final List<SubTaskModel> _subTasks = [];
 
   @override
   void initState() {
@@ -42,6 +44,8 @@ class _CreateTaskScreenState extends State<CreateTaskScreen>
     _descriptionController.dispose();
     _titleFocus.dispose();
     _descriptionFocus.dispose();
+    _subtaskController.dispose();
+    _subtaskFocus.dispose();
     super.dispose();
   }
 
@@ -103,96 +107,97 @@ class _CreateTaskScreenState extends State<CreateTaskScreen>
                 ),
               ),
 
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header with back button
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 24.w,
-                      vertical: 20.h,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              height: 48.h,
-                              width: 48.w,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(15.r),
-                                color: Colors.white.withOpacity(0.07),
-                                border: Border.all(
-                                  color: Colors.white.withOpacity(0.1),
-                                  width: 1.5,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 5),
+              // Now the entire content is in a SingleChildScrollView
+              SingleChildScrollView(
+                physics: BouncingScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header with back button
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 24.w,
+                        vertical: 20.h,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                height: 48.h,
+                                width: 48.w,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(15.r),
+                                  color: Colors.white.withOpacity(0.07),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.1),
+                                    width: 1.5,
                                   ),
-                                ],
-                              ),
-                              child: IconButton(
-                                icon: Icon(
-                                  Icons.arrow_back_ios_new,
-                                  color: Colors.white,
-                                  size: 20.sp,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.05),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 5),
+                                    ),
+                                  ],
                                 ),
-                                onPressed: () => Navigator.pop(context),
-                              ),
-                            ),
-                            SizedBox(width: 20.w),
-                            AnimatedBuilder(
-                              animation: _animationController,
-                              builder: (context, child) {
-                                return Transform.translate(
-                                  offset: Offset(
-                                    (1 - _animationController.value) * 20,
-                                    0,
+                                child: IconButton(
+                                  icon: Icon(
+                                    Icons.arrow_back_ios_new,
+                                    color: Colors.white,
+                                    size: 20.sp,
                                   ),
-                                  child: Opacity(
-                                    opacity: _animationController.value,
-                                    child: Text(
-                                      'Create Task',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 32.sp,
-                                        fontWeight: FontWeight.bold,
-                                        foreground:
-                                            Paint()
-                                              ..shader = LinearGradient(
-                                                colors: [
-                                                  Colors.white,
-                                                  const Color(0xFF818CF8),
-                                                ],
-                                              ).createShader(
-                                                Rect.fromLTWH(
-                                                  0,
-                                                  0,
-                                                  200.w,
-                                                  70.h,
+                                  onPressed: () => Navigator.pop(context),
+                                ),
+                              ),
+                              SizedBox(width: 20.w),
+                              AnimatedBuilder(
+                                animation: _animationController,
+                                builder: (context, child) {
+                                  return Transform.translate(
+                                    offset: Offset(
+                                      (1 - _animationController.value) * 20,
+                                      0,
+                                    ),
+                                    child: Opacity(
+                                      opacity: _animationController.value,
+                                      child: Text(
+                                        'Create Task',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 32.sp,
+                                          fontWeight: FontWeight.bold,
+                                          foreground:
+                                              Paint()
+                                                ..shader = LinearGradient(
+                                                  colors: [
+                                                    Colors.white,
+                                                    const Color(0xFF818CF8),
+                                                  ],
+                                                ).createShader(
+                                                  Rect.fromLTWH(
+                                                    0,
+                                                    0,
+                                                    200.w,
+                                                    70.h,
+                                                  ),
                                                 ),
-                                              ),
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ],
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
 
-                  SizedBox(height: 24.h),
+                    SizedBox(height: 24.h),
 
-                  // Form content in a scrollable area
-                  Expanded(
-                    child: SingleChildScrollView(
-                      physics: BouncingScrollPhysics(),
+                    // Form content section
+                    Padding(
                       padding: EdgeInsets.symmetric(horizontal: 24.w),
                       child: Form(
                         key: _formKey,
@@ -244,6 +249,13 @@ class _CreateTaskScreenState extends State<CreateTaskScreen>
 
                                     SizedBox(height: 28.h),
 
+                                    // Sub-tasks section
+                                    _buildSectionTitle('Sub Tasks'),
+                                    SizedBox(height: 12.h),
+                                    _buildSubTasksSection(),
+
+                                    SizedBox(height: 28.h),
+
                                     // Date selection
                                     _buildSectionTitle('Timeline'),
                                     SizedBox(height: 18.h),
@@ -292,8 +304,8 @@ class _CreateTaskScreenState extends State<CreateTaskScreen>
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -382,6 +394,212 @@ class _CreateTaskScreenState extends State<CreateTaskScreen>
     );
   }
 
+  Widget _buildSubTasksSection() {
+    return Column(
+      children: [
+        // Input field to add new sub-tasks
+        Row(
+          children: [
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(18.r),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.12),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.10),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: TextFormField(
+                  controller: _subtaskController,
+                  focusNode: _subtaskFocus,
+                  style: GoogleFonts.poppins(
+                    fontSize: 16.sp,
+                    color: Colors.white,
+                    letterSpacing: 0.3,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Add sub-task...',
+                    hintStyle: GoogleFonts.poppins(
+                      fontSize: 16.sp,
+                      color: Colors.grey.shade500,
+                      letterSpacing: 0.3,
+                    ),
+                    fillColor: Colors.transparent,
+                    filled: true,
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 24.w,
+                      vertical: 16.h,
+                    ),
+                  ),
+                  onEditingComplete: _addSubTask,
+                ),
+              ),
+            ),
+            SizedBox(width: 12.w),
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF818CF8).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(14.r),
+              ),
+              child: IconButton(
+                onPressed: _addSubTask,
+                icon: Icon(
+                  Icons.add_rounded,
+                  color: const Color(0xFF818CF8),
+                  size: 28.sp,
+                ),
+                tooltip: 'Add Sub-task',
+              ),
+            ),
+          ],
+        ),
+
+        SizedBox(height: 16.h),
+
+        // Sub-tasks list
+        if (_subTasks.isNotEmpty) ...[
+          Container(
+            padding: EdgeInsets.all(4.w),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.03),
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+            child: ListView.separated(
+              physics: NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              itemCount: _subTasks.length,
+              separatorBuilder:
+                  (context, index) =>
+                      Divider(color: Colors.white.withOpacity(0.08), height: 1),
+              itemBuilder: (context, index) {
+                final subTask = _subTasks[index];
+                return Dismissible(
+                  key: Key(subTask.id),
+                  background: Container(
+                    alignment: Alignment.centerRight,
+                    padding: EdgeInsets.only(right: 20.w),
+                    color: Colors.red.withOpacity(0.2),
+                    child: Icon(Icons.delete_outline, color: Colors.white),
+                  ),
+                  direction: DismissDirection.endToStart,
+                  onDismissed: (direction) {
+                    setState(() {
+                      _subTasks.removeAt(index);
+                    });
+                  },
+                  child: ListTile(
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 4.h,
+                    ),
+                    leading: InkWell(
+                      onTap: () {
+                        setState(() {
+                          _subTasks[index] = subTask.copyWith(
+                            isDone: !subTask.isDone,
+                          );
+                        });
+                      },
+                      child: Container(
+                        width: 24.w,
+                        height: 24.h,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color:
+                              subTask.isDone
+                                  ? const Color(0xFF818CF8).withOpacity(0.2)
+                                  : Colors.transparent,
+                          border: Border.all(
+                            color:
+                                subTask.isDone
+                                    ? const Color(0xFF818CF8)
+                                    : Colors.white.withOpacity(0.3),
+                            width: 1.5,
+                          ),
+                        ),
+                        child:
+                            subTask.isDone
+                                ? Icon(
+                                  Icons.check,
+                                  size: 16.sp,
+                                  color: const Color(0xFF818CF8),
+                                )
+                                : null,
+                      ),
+                    ),
+                    title: Text(
+                      subTask.title,
+                      style: GoogleFonts.poppins(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w500,
+                        color:
+                            subTask.isDone
+                                ? Colors.white.withOpacity(0.6)
+                                : Colors.white,
+                        decoration:
+                            subTask.isDone ? TextDecoration.lineThrough : null,
+                        decorationColor: Colors.white.withOpacity(0.4),
+                        decorationThickness: 2,
+                      ),
+                    ),
+                    trailing: IconButton(
+                      icon: Icon(
+                        Icons.delete_outline,
+                        color: Colors.white.withOpacity(0.6),
+                        size: 22.sp,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _subTasks.removeAt(index);
+                        });
+                      },
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Padding(
+            padding: EdgeInsets.only(left: 4.w),
+            child: Text(
+              'Swipe left to delete sub-tasks',
+              style: GoogleFonts.poppins(
+                fontSize: 12.sp,
+                color: Colors.white.withOpacity(0.5),
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  void _addSubTask() {
+    if (_subtaskController.text.trim().isNotEmpty) {
+      setState(() {
+        _subTasks.add(
+          SubTaskModel(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            title: _subtaskController.text.trim(),
+          ),
+        );
+        _subtaskController.clear();
+      });
+      FocusScope.of(context).requestFocus(_subtaskFocus);
+    }
+  }
+
   Widget _buildDateSelector(
     String label,
     DateTime date, {
@@ -391,7 +609,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen>
       onTap: onTap,
       borderRadius: BorderRadius.circular(18.r),
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 18.h),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 18.h),
         decoration: BoxDecoration(
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(18.r),
@@ -421,14 +639,14 @@ class _CreateTaskScreenState extends State<CreateTaskScreen>
               children: [
                 Icon(
                   Icons.calendar_today,
-                  size: 18.sp,
+                  size: 16.sp,
                   color: const Color(0xFF818CF8),
                 ),
                 SizedBox(width: 10.w),
                 Text(
                   DateFormat('MMM d, y').format(date),
                   style: GoogleFonts.poppins(
-                    fontSize: 16.sp,
+                    fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
                     letterSpacing: 0.3,
@@ -585,7 +803,9 @@ class _CreateTaskScreenState extends State<CreateTaskScreen>
               surface: Color(0xFF191B2F),
               onSurface: Colors.white,
             ),
-            dialogBackgroundColor: const Color(0xFF0F1227),
+            dialogTheme: DialogThemeData(
+              backgroundColor: const Color(0xFF0F1227),
+            ),
           ),
           child: child!,
         );
@@ -617,7 +837,8 @@ class _CreateTaskScreenState extends State<CreateTaskScreen>
         isDone: false,
         startDate: _startDate,
         endDate: _endDate,
-        priority: _priority, // Added priority to the task model
+        priority: _priority,
+        subTasks: _subTasks,
       );
 
       // Return the new task to the previous screen

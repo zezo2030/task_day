@@ -3,8 +3,10 @@ import 'package:fluentui_icons/fluentui_icons.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:task_day/models/task_model.dart';
 import 'package:task_day/view/task_details_screen.dart';
+import 'package:task_day/controller/task_cubit/task_cubit.dart';
 
 class TasksScreen extends StatefulWidget {
   const TasksScreen({super.key});
@@ -14,49 +16,10 @@ class TasksScreen extends StatefulWidget {
 }
 
 class _TasksScreenState extends State<TasksScreen>
-    with SingleTickerProviderStateMixin {
-  // Example tasks list
-  final List<TaskModel> _tasks = [
-    TaskModel(
-      id: '1',
-      title: 'Complete project proposal',
-      description: 'Finish the draft and send it to the team for review',
-      isDone: false,
-      startDate: DateTime.now(),
-      endDate: DateTime.now().add(const Duration(days: 2)),
-      priority: 0,
-    ),
-    TaskModel(
-      id: '2',
-      title: 'Meeting with client',
-      description: 'Discuss requirements and timeline for the new feature',
-      isDone: true,
-      startDate: DateTime.now().subtract(const Duration(days: 1)),
-      endDate: DateTime.now().subtract(const Duration(days: 1)),
-      priority: 1,
-    ),
-    TaskModel(
-      id: '3',
-      title: 'Review code changes',
-      description: 'Check pull requests and provide feedback',
-      isDone: false,
-      startDate: DateTime.now(),
-      endDate: DateTime.now().add(const Duration(days: 1)),
-      priority: 2,
-    ),
-    TaskModel(
-      id: '4',
-      title: 'Update documentation',
-      description: 'Add new API endpoints to the documentation',
-      isDone: false,
-      startDate: DateTime.now().add(const Duration(days: 1)),
-      endDate: DateTime.now().add(const Duration(days: 3)),
-      priority: 3,
-    ),
-  ];
-
+    with TickerProviderStateMixin {
   final String _filterOption = 'All';
   late AnimationController _animationController;
+  late AnimationController _pulseController;
 
   @override
   void initState() {
@@ -65,23 +28,32 @@ class _TasksScreenState extends State<TasksScreen>
       vsync: this,
       duration: const Duration(milliseconds: 800),
     )..forward();
+
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    )..repeat(reverse: true);
+
+    // Load tasks when screen initializes
+    context.read<TaskCubit>().getTasks();
   }
 
   @override
   void dispose() {
     _animationController.dispose();
+    _pulseController.dispose();
     super.dispose();
   }
 
-  List<TaskModel> get _filteredTasks {
+  List<TaskModel> _getFilteredTasks(List<TaskModel> tasks) {
     switch (_filterOption) {
       case 'Completed':
-        return _tasks.where((task) => task.isDone).toList();
+        return tasks.where((task) => task.isDone).toList();
       case 'Pending':
-        return _tasks.where((task) => !task.isDone).toList();
+        return tasks.where((task) => !task.isDone).toList();
       case 'All':
       default:
-        return _tasks;
+        return tasks;
     }
   }
 
@@ -277,12 +249,53 @@ class _TasksScreenState extends State<TasksScreen>
 
                 SizedBox(height: 16.h),
 
-                // Tasks List with animations
+                // Tasks List with BlocBuilder
                 Expanded(
-                  child:
-                      _filteredTasks.isEmpty
-                          ? _buildEmptyState()
-                          : _buildTasksList(),
+                  child: BlocConsumer<TaskCubit, TaskState>(
+                    listener: (context, state) {
+                      if (state is TaskError) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Error: ${state.message}'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    },
+                    builder: (context, state) {
+                      if (state is TaskLoading) {
+                        return const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF4F46E5),
+                          ),
+                        );
+                      }
+
+                      if (state is TaskLoaded) {
+                        final filteredTasks = _getFilteredTasks(state.tasks);
+                        return filteredTasks.isEmpty
+                            ? _buildEmptyState()
+                            : _buildTasksList(filteredTasks);
+                      }
+
+                      // Handle other states
+                      if (state is TaskAdded ||
+                          state is TaskToggled ||
+                          state is TaskDeleted) {
+                        // Refresh tasks after any modification
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          context.read<TaskCubit>().getTasks();
+                        });
+                        return const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF4F46E5),
+                          ),
+                        );
+                      }
+
+                      return _buildEmptyState();
+                    },
+                  ),
                 ),
               ],
             ),
@@ -395,16 +408,16 @@ class _TasksScreenState extends State<TasksScreen>
     );
   }
 
-  Widget _buildTasksList() {
+  Widget _buildTasksList(List<TaskModel> tasks) {
     return AnimatedBuilder(
       animation: _animationController,
       builder: (context, child) {
         return ListView.builder(
           physics: BouncingScrollPhysics(),
           padding: EdgeInsets.symmetric(horizontal: 20.w),
-          itemCount: _filteredTasks.length,
+          itemCount: tasks.length,
           itemBuilder: (context, index) {
-            final task = _filteredTasks[index];
+            final task = tasks[index];
             // Staggered animation effect
             final itemAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
               CurvedAnimation(
@@ -530,49 +543,8 @@ class _TasksScreenState extends State<TasksScreen>
                   ),
                   Column(
                     children: [
-                      // Task completion button with ripple effect
-                      Container(
-                        height: 40.h,
-                        width: 40.w,
-                        decoration: BoxDecoration(
-                          color:
-                              task.isDone
-                                  ? const Color(0xFF10B981).withOpacity(0.15)
-                                  : Colors.white.withOpacity(0.1),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color:
-                                task.isDone
-                                    ? const Color(0xFF10B981)
-                                    : Colors.white.withOpacity(0.2),
-                            width: 1.5,
-                          ),
-                        ),
-                        child: IconButton(
-                          icon: Icon(
-                            task.isDone
-                                ? Icons.check_circle
-                                : Icons.circle_outlined,
-                            color:
-                                task.isDone
-                                    ? const Color(0xFF10B981)
-                                    : Colors.white.withOpacity(0.7),
-                            size: 24.sp,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              final index = _tasks.indexWhere(
-                                (t) => t.id == task.id,
-                              );
-                              if (index != -1) {
-                                _tasks[index] = _tasks[index].copyWith(
-                                  isDone: !task.isDone,
-                                );
-                              }
-                            });
-                          },
-                        ),
-                      ),
+                      // Beautiful Task completion button
+                      _buildBeautifulTaskButton(task),
                       if (isLate && !task.isDone)
                         Container(
                           margin: EdgeInsets.only(top: 6.h),
@@ -655,20 +627,123 @@ class _TasksScreenState extends State<TasksScreen>
     );
   }
 
+  Widget _buildBeautifulTaskButton(TaskModel task) {
+    return GestureDetector(
+      onTap: () {
+        context.read<TaskCubit>().toggleTask(task);
+      },
+      child: AnimatedBuilder(
+        animation: _pulseController,
+        builder: (context, child) {
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.elasticOut,
+            height: 50.h,
+            width: 50.w,
+            transform:
+                !task.isDone
+                    ? (Matrix4.identity()
+                      ..scale(1.0 + (_pulseController.value * 0.05)))
+                    : Matrix4.identity(),
+            decoration: BoxDecoration(
+              gradient:
+                  task.isDone
+                      ? LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          const Color(0xFF10B981),
+                          const Color(0xFF059669),
+                        ],
+                      )
+                      : LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          const Color(0xFF818CF8).withOpacity(0.1),
+                          const Color(0xFF4F46E5).withOpacity(0.1),
+                        ],
+                      ),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color:
+                      task.isDone
+                          ? const Color(0xFF10B981).withOpacity(0.4)
+                          : const Color(0xFF4F46E5).withOpacity(0.2),
+                  blurRadius: task.isDone ? 15 : 10,
+                  offset: const Offset(0, 5),
+                  spreadRadius: task.isDone ? 2 : 0,
+                ),
+              ],
+              border: Border.all(
+                color:
+                    task.isDone
+                        ? const Color(0xFF10B981)
+                        : const Color(0xFF4F46E5).withOpacity(0.3),
+                width: 2,
+              ),
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                if (task.isDone)
+                  Container(
+                    height: 40.h,
+                    width: 40.w,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withOpacity(0.2),
+                    ),
+                  ),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: Icon(
+                    task.isDone
+                        ? Icons.check_circle_rounded
+                        : Icons.radio_button_unchecked_rounded,
+                    key: ValueKey(task.isDone),
+                    color: task.isDone ? Colors.white : const Color(0xFF4F46E5),
+                    size: 30.sp,
+                  ),
+                ),
+                if (task.isDone) ...[
+                  Positioned(
+                    top: 10.h,
+                    right: 8.w,
+                    child: Icon(
+                      Icons.star_rounded,
+                      size: 10.sp,
+                      color: Colors.yellow.shade300,
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 8.h,
+                    left: 8.w,
+                    child: Icon(
+                      Icons.star_rounded,
+                      size: 8.sp,
+                      color: Colors.yellow.shade200,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   void _showEnhancedTaskDetails(TaskModel task) {
     // Navigate to the task details screen
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => TaskDetailsScreen(task: task)),
     ).then((updatedTask) {
-      // Update task if returned from details screen
+      // Refresh tasks if returned from details screen with changes
       if (updatedTask != null && updatedTask is TaskModel) {
-        setState(() {
-          final index = _tasks.indexWhere((t) => t.id == updatedTask.id);
-          if (index != -1) {
-            _tasks[index] = updatedTask;
-          }
-        });
+        context.read<TaskCubit>().getTasks();
       }
     });
   }

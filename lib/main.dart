@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:task_day/controller/task_cubit/task_cubit.dart';
 import 'package:task_day/core/themes/app_theme.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:task_day/services/hive_service.dart';
 import 'package:task_day/core/router/app_route.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:task_day/controller/cubit/habit_cubit.dart';
+import 'package:task_day/controller/habit_cubit/habit_cubit.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,6 +29,9 @@ class MainApp extends StatelessWidget {
           providers: [
             BlocProvider<HabitCubit>(
               create: (context) => HabitCubit()..getHabits(),
+            ),
+            BlocProvider<TaskCubit>(
+              create: (context) => TaskCubit()..getTasks(),
             ),
             // Add more BlocProviders here as needed
           ],

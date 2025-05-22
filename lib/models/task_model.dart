@@ -3,7 +3,7 @@ import 'package:hive/hive.dart';
 
 part 'task_model.g.dart';
 
-@HiveType(typeId: 0)
+@HiveType(typeId: 1)
 class SubTaskModel extends Equatable {
   @HiveField(0)
   final String id;
@@ -31,7 +31,7 @@ class SubTaskModel extends Equatable {
   List<Object?> get props => [id, title, isDone];
 }
 
-@HiveType(typeId: 1)
+@HiveType(typeId: 2)
 class TaskModel extends Equatable {
   @HiveField(0)
   final String id;

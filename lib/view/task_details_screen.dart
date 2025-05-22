@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:task_day/models/task_model.dart';
+import 'package:task_day/controller/task_cubit/task_cubit.dart';
 
 class TaskDetailsScreen extends StatefulWidget {
   final TaskModel task;
@@ -58,418 +60,479 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
           stops: const [0.1, 0.5, 0.9],
         ),
       ),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: Container(
-              padding: EdgeInsets.all(8.w),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.1),
+      child: BlocConsumer<TaskCubit, TaskState>(
+        listener: (context, state) {
+          if (state is TaskError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error: ${state.message}'),
+                backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
               ),
-              child: Icon(
-                Icons.arrow_back_ios_new,
-                color: Colors.white,
-                size: 18.sp,
-              ),
-            ),
-            onPressed: () => Navigator.pop(context, _task),
-          ),
-          actions: [
-            IconButton(
-              icon: Container(
-                padding: EdgeInsets.all(8.w),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.1),
-                ),
-                child: Icon(
-                  Icons.edit_outlined,
-                  color: Colors.white,
-                  size: 18.sp,
-                ),
-              ),
-              onPressed: () {
-                // Navigate to edit screen (not implemented yet)
-              },
-            ),
-            SizedBox(width: 8.w),
-          ],
-        ),
-        body: SafeArea(
-          child: Stack(
-            children: [
-              // Background decorative elements
-              Positioned(
-                top: -50.h,
-                right: -30.w,
-                child: Container(
-                  height: 220.h,
-                  width: 220.w,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: priorityColor.withOpacity(0.08),
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 150.h,
-                left: -70.w,
-                child: Container(
-                  height: 170.h,
-                  width: 170.w,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: const Color(0xFF818CF8).withOpacity(0.07),
-                  ),
-                ),
-              ),
-
-              // Main content
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            );
+          } else if (state is SubtaskAdded ||
+              state is SubtaskToggled ||
+              state is SubtaskDeleted) {
+            // Refresh task data when subtask operations complete
+            context.read<TaskCubit>().getTasks();
+          }
+        },
+        builder: (context, state) {
+          return Scaffold(
+            backgroundColor: Colors.transparent,
+            body: SafeArea(
+              child: Stack(
                 children: [
-                  // Header section with title and completion status
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 24.w,
-                      vertical: 8.h,
+                  // Background decorative elements
+                  Positioned(
+                    top: -50.h,
+                    right: -30.w,
+                    child: Container(
+                      height: 220.h,
+                      width: 220.w,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: priorityColor.withOpacity(0.08),
+                      ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Priority indicator
-                        Row(
-                          children: [
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 12.w,
-                                vertical: 6.h,
-                              ),
+                  ),
+                  Positioned(
+                    bottom: 150.h,
+                    left: -70.w,
+                    child: Container(
+                      height: 170.h,
+                      width: 170.w,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: const Color(0xFF818CF8).withOpacity(0.07),
+                      ),
+                    ),
+                  ),
+
+                  // Main content with CustomScrollView
+                  CustomScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    slivers: [
+                      // App Bar
+                      SliverAppBar(
+                        backgroundColor: Colors.transparent,
+                        elevation: 0,
+                        pinned: false,
+                        floating: true,
+                        snap: true,
+                        expandedHeight: 60.h,
+                        leading: IconButton(
+                          icon: Container(
+                            padding: EdgeInsets.all(8.w),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white.withOpacity(0.1),
+                            ),
+                            child: Icon(
+                              Icons.arrow_back_ios_new,
+                              color: Colors.white,
+                              size: 18.sp,
+                            ),
+                          ),
+                          onPressed: () => Navigator.pop(context, _task),
+                        ),
+                        actions: [
+                          IconButton(
+                            icon: Container(
+                              padding: EdgeInsets.all(8.w),
                               decoration: BoxDecoration(
-                                color: priorityColor.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(12.r),
+                                shape: BoxShape.circle,
+                                color: Colors.white.withOpacity(0.1),
                               ),
-                              child: Text(
-                                _getPriorityText(_task.priority),
-                                style: GoogleFonts.poppins(
-                                  fontSize: 12.sp,
-                                  fontWeight: FontWeight.w600,
-                                  color: priorityColor,
-                                ),
+                              child: Icon(
+                                Icons.edit_outlined,
+                                color: Colors.white,
+                                size: 18.sp,
                               ),
                             ),
-                            const Spacer(),
-                            // Task completion toggle
-                            InkWell(
-                              onTap: () {
-                                setState(() {
-                                  _task = _task.copyWith(isDone: !_task.isDone);
-                                });
-                              },
-                              borderRadius: BorderRadius.circular(12.r),
-                              child: Container(
+                            onPressed: () {
+                              // Navigate to edit screen (not implemented yet)
+                            },
+                          ),
+                          SizedBox(width: 8.w),
+                        ],
+                      ),
+
+                      // Header section with title and completion status
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 24.w,
+                            vertical: 8.h,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Priority indicator
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 12.w,
+                                      vertical: 6.h,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: priorityColor.withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(12.r),
+                                    ),
+                                    child: Text(
+                                      _getPriorityText(_task.priority),
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.w600,
+                                        color: priorityColor,
+                                      ),
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  // Task completion toggle
+                                  InkWell(
+                                    onTap: () {
+                                      // Use TaskCubit to toggle task completion
+                                      context.read<TaskCubit>().toggleTask(
+                                        _task,
+                                      );
+
+                                      setState(() {
+                                        _task = _task.copyWith(
+                                          isDone: !_task.isDone,
+                                        );
+                                      });
+                                    },
+                                    borderRadius: BorderRadius.circular(12.r),
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 12.w,
+                                        vertical: 6.h,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            _task.isDone
+                                                ? Colors.green.withOpacity(0.15)
+                                                : Colors.grey.withOpacity(0.15),
+                                        borderRadius: BorderRadius.circular(
+                                          12.r,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            _task.isDone
+                                                ? Icons.check_circle
+                                                : Icons.circle_outlined,
+                                            color:
+                                                _task.isDone
+                                                    ? Colors.green
+                                                    : Colors.grey,
+                                            size: 16.sp,
+                                          ),
+                                          SizedBox(width: 6.w),
+                                          Text(
+                                            _task.isDone
+                                                ? 'Completed'
+                                                : 'In Progress',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 12.sp,
+                                              fontWeight: FontWeight.w600,
+                                              color:
+                                                  _task.isDone
+                                                      ? Colors.green
+                                                      : Colors.grey,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              SizedBox(height: 14.h),
+
+                              // Task title
+                              Text(
+                                _task.title,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 24.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  height: 1.2,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+
+                              SizedBox(height: 20.h),
+
+                              // Task dates
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.calendar_today_outlined,
+                                    color: Colors.white.withOpacity(0.7),
+                                    size: 18.sp,
+                                  ),
+                                  SizedBox(width: 8.w),
+                                  Text(
+                                    "${DateFormat('MMM d, y').format(_task.startDate)} - ${DateFormat('MMM d, y').format(_task.endDate)}",
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14.sp,
+                                      color: Colors.white.withOpacity(0.7),
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              SizedBox(height: 20.h),
+
+                              // Progress section
+                              if (totalSubtasks > 0) ...[
+                                Row(
+                                  children: [
+                                    Text(
+                                      "Progress:",
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 14.sp,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.white.withOpacity(0.7),
+                                      ),
+                                    ),
+                                    SizedBox(width: 8.w),
+                                    Text(
+                                      "$completedSubtasks of $totalSubtasks tasks",
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 14.sp,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    Text(
+                                      "${(progress * 100).toInt()}%",
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 14.sp,
+                                        fontWeight: FontWeight.w600,
+                                        color: priorityColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 8.h),
+                                // Progress bar
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(10.r),
+                                  child: LinearProgressIndicator(
+                                    value: progress,
+                                    backgroundColor: Colors.white.withOpacity(
+                                      0.1,
+                                    ),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      priorityColor,
+                                    ),
+                                    minHeight: 8.h,
+                                  ),
+                                ),
+                              ],
+
+                              SizedBox(height: 24.h),
+
+                              // Description section
+                              Text(
+                                "Description",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              SizedBox(height: 10.h),
+                              Container(
+                                padding: EdgeInsets.all(16.w),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.05),
+                                  borderRadius: BorderRadius.circular(16.r),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.1),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Text(
+                                  _task.description,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14.sp,
+                                    color: Colors.white.withOpacity(0.8),
+                                    height: 1.5,
+                                  ),
+                                ),
+                              ),
+
+                              SizedBox(height: 24.h),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // Subtasks section header
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 24.w),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Subtasks",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              Container(
                                 padding: EdgeInsets.symmetric(
                                   horizontal: 12.w,
                                   vertical: 6.h,
                                 ),
                                 decoration: BoxDecoration(
-                                  color:
-                                      _task.isDone
-                                          ? Colors.green.withOpacity(0.15)
-                                          : Colors.grey.withOpacity(0.15),
+                                  color: const Color(
+                                    0xFF4F46E5,
+                                  ).withOpacity(0.15),
                                   borderRadius: BorderRadius.circular(12.r),
                                 ),
                                 child: Row(
                                   children: [
                                     Icon(
-                                      _task.isDone
-                                          ? Icons.check_circle
-                                          : Icons.circle_outlined,
-                                      color:
-                                          _task.isDone
-                                              ? Colors.green
-                                              : Colors.grey,
+                                      Icons.task_alt_outlined,
                                       size: 16.sp,
+                                      color: const Color(0xFF4F46E5),
                                     ),
                                     SizedBox(width: 6.w),
                                     Text(
-                                      _task.isDone
-                                          ? 'Completed'
-                                          : 'In Progress',
+                                      "$completedSubtasks/$totalSubtasks",
                                       style: GoogleFonts.poppins(
                                         fontSize: 12.sp,
                                         fontWeight: FontWeight.w600,
-                                        color:
-                                            _task.isDone
-                                                ? Colors.green
-                                                : Colors.grey,
+                                        color: const Color(0xFF4F46E5),
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-
-                        SizedBox(height: 14.h),
-
-                        // Task title
-                        Text(
-                          _task.title,
-                          style: GoogleFonts.poppins(
-                            fontSize: 24.sp,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            height: 1.2,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-
-                        SizedBox(height: 20.h),
-
-                        // Task dates
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.calendar_today_outlined,
-                              color: Colors.white.withOpacity(0.7),
-                              size: 18.sp,
-                            ),
-                            SizedBox(width: 8.w),
-                            Text(
-                              "${DateFormat('MMM d, y').format(_task.startDate)} - ${DateFormat('MMM d, y').format(_task.endDate)}",
-                              style: GoogleFonts.poppins(
-                                fontSize: 14.sp,
-                                color: Colors.white.withOpacity(0.7),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        SizedBox(height: 20.h),
-
-                        // Progress section
-                        if (totalSubtasks > 0) ...[
-                          Row(
-                            children: [
-                              Text(
-                                "Progress:",
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.white.withOpacity(0.7),
-                                ),
-                              ),
-                              SizedBox(width: 8.w),
-                              Text(
-                                "$completedSubtasks of $totalSubtasks tasks",
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              const Spacer(),
-                              Text(
-                                "${(progress * 100).toInt()}%",
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.w600,
-                                  color: priorityColor,
-                                ),
-                              ),
                             ],
                           ),
-                          SizedBox(height: 8.h),
-                          // Progress bar
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(10.r),
-                            child: LinearProgressIndicator(
-                              value: progress,
-                              backgroundColor: Colors.white.withOpacity(0.1),
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                priorityColor,
-                              ),
-                              minHeight: 8.h,
-                            ),
-                          ),
-                        ],
-
-                        SizedBox(height: 24.h),
-
-                        // Description section
-                        Text(
-                          "Description",
-                          style: GoogleFonts.poppins(
-                            fontSize: 18.sp,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
                         ),
-                        SizedBox(height: 10.h),
-                        Container(
-                          padding: EdgeInsets.all(16.w),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(16.r),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.1),
-                              width: 1,
-                            ),
-                          ),
-                          child: Text(
-                            _task.description,
-                            style: GoogleFonts.poppins(
-                              fontSize: 14.sp,
-                              color: Colors.white.withOpacity(0.8),
-                              height: 1.5,
-                            ),
-                          ),
-                        ),
+                      ),
 
-                        SizedBox(height: 24.h),
-                      ],
-                    ),
-                  ),
+                      SliverToBoxAdapter(child: SizedBox(height: 16.h)),
 
-                  // Subtasks section
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24.w),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          "Subtasks",
-                          style: GoogleFonts.poppins(
-                            fontSize: 18.sp,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 12.w,
-                            vertical: 6.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF4F46E5).withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(12.r),
-                          ),
+                      // Add subtask input
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 24.w),
                           child: Row(
                             children: [
-                              Icon(
-                                Icons.task_alt_outlined,
-                                size: 16.sp,
-                                color: const Color(0xFF4F46E5),
+                              Expanded(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.transparent,
+                                    borderRadius: BorderRadius.circular(16.r),
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.12),
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: TextField(
+                                    controller: _subtaskController,
+                                    focusNode: _subtaskFocus,
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14.sp,
+                                      color: Colors.white,
+                                    ),
+                                    decoration: InputDecoration(
+                                      hintText: 'Add new subtask...',
+                                      hintStyle: GoogleFonts.poppins(
+                                        fontSize: 14.sp,
+                                        color: Colors.white.withOpacity(0.5),
+                                      ),
+                                      border: InputBorder.none,
+                                      contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 16.w,
+                                        vertical: 12.h,
+                                      ),
+                                      filled: true,
+                                      fillColor: Colors.transparent,
+                                    ),
+                                    onSubmitted: (_) => _addSubTask(),
+                                  ),
+                                ),
                               ),
-                              SizedBox(width: 6.w),
-                              Text(
-                                "$completedSubtasks/$totalSubtasks",
-                                style: GoogleFonts.poppins(
-                                  fontSize: 12.sp,
-                                  fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF4F46E5),
+                              SizedBox(width: 12.w),
+                              InkWell(
+                                onTap: _addSubTask,
+                                borderRadius: BorderRadius.circular(12.r),
+                                child: Container(
+                                  padding: EdgeInsets.all(12.w),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF4F46E5),
+                                    borderRadius: BorderRadius.circular(12.r),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(
+                                          0xFF4F46E5,
+                                        ).withOpacity(0.25),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Icon(
+                                    Icons.add,
+                                    color: Colors.white,
+                                    size: 20.sp,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
 
-                  SizedBox(height: 16.h),
+                      SliverToBoxAdapter(child: SizedBox(height: 16.h)),
 
-                  // Add subtask input
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24.w),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.transparent,
-                              borderRadius: BorderRadius.circular(16.r),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.12),
-                                width: 1.5,
-                              ),
+                      // Subtasks list
+                      _task.subTasks.isEmpty
+                          ? SliverToBoxAdapter(
+                            child: Container(
+                              height: 300.h,
+                              child: _buildEmptySubtasks(),
                             ),
-                            child: TextField(
-                              controller: _subtaskController,
-                              focusNode: _subtaskFocus,
-                              style: GoogleFonts.poppins(
-                                fontSize: 14.sp,
-                                color: Colors.white,
-                              ),
-                              decoration: InputDecoration(
-                                hintText: 'Add new subtask...',
-                                hintStyle: GoogleFonts.poppins(
-                                  fontSize: 14.sp,
-                                  color: Colors.white.withOpacity(0.5),
-                                ),
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 16.w,
-                                  vertical: 12.h,
-                                ),
-                                filled: true,
-                                fillColor: Colors.transparent,
-                              ),
-                              onSubmitted: (_) => _addSubTask(),
-                            ),
+                          )
+                          : SliverList(
+                            delegate: SliverChildBuilderDelegate((
+                              context,
+                              index,
+                            ) {
+                              final subtask = _task.subTasks[index];
+                              return Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                                child: _buildSubtaskItem(subtask, index),
+                              );
+                            }, childCount: _task.subTasks.length),
                           ),
-                        ),
-                        SizedBox(width: 12.w),
-                        InkWell(
-                          onTap: _addSubTask,
-                          borderRadius: BorderRadius.circular(12.r),
-                          child: Container(
-                            padding: EdgeInsets.all(12.w),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF4F46E5),
-                              borderRadius: BorderRadius.circular(12.r),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(
-                                    0xFF4F46E5,
-                                  ).withOpacity(0.25),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Icon(
-                              Icons.add,
-                              color: Colors.white,
-                              size: 20.sp,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
 
-                  SizedBox(height: 16.h),
-
-                  // Subtasks list
-                  Expanded(
-                    child:
-                        _task.subTasks.isEmpty
-                            ? _buildEmptySubtasks()
-                            : _buildSubtasksList(),
+                      // Bottom padding
+                      SliverToBoxAdapter(child: SizedBox(height: 100.h)),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -504,22 +567,6 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
             textAlign: TextAlign.center,
           ),
         ],
-      ),
-    );
-  }
-
-  // Subtasks list
-  Widget _buildSubtasksList() {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16.w),
-      padding: EdgeInsets.only(top: 10.h),
-      child: ListView.builder(
-        physics: BouncingScrollPhysics(),
-        itemCount: _task.subTasks.length,
-        itemBuilder: (context, index) {
-          final subtask = _task.subTasks[index];
-          return _buildSubtaskItem(subtask, index);
-        },
       ),
     );
   }
@@ -624,14 +671,18 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
   void _addSubTask() {
     final String title = _subtaskController.text.trim();
     if (title.isNotEmpty) {
+      final newSubtask = SubTaskModel(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        title: title,
+      );
+
+      // Use TaskCubit to add subtask
+      context.read<TaskCubit>().addSubtask(_task.id, newSubtask);
+
+      // Update local task state and clear input
       setState(() {
         List<SubTaskModel> updatedSubtasks = List.from(_task.subTasks);
-        updatedSubtasks.add(
-          SubTaskModel(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
-            title: title,
-          ),
-        );
+        updatedSubtasks.add(newSubtask);
         _task = _task.copyWith(subTasks: updatedSubtasks);
         _subtaskController.clear();
       });
@@ -641,9 +692,14 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
 
   // Toggle subtask completion status
   void _toggleSubtaskStatus(int index) {
+    final subtask = _task.subTasks[index];
+
+    // Use TaskCubit to toggle subtask
+    context.read<TaskCubit>().toggleSubtask(_task.id, subtask);
+
+    // Update local task state
     setState(() {
       List<SubTaskModel> updatedSubtasks = List.from(_task.subTasks);
-      final subtask = updatedSubtasks[index];
       updatedSubtasks[index] = subtask.copyWith(isDone: !subtask.isDone);
       _task = _task.copyWith(subTasks: updatedSubtasks);
     });
@@ -651,6 +707,12 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
 
   // Remove a subtask
   void _removeSubtask(int index) {
+    final subtask = _task.subTasks[index];
+
+    // Use TaskCubit to delete subtask
+    context.read<TaskCubit>().deleteSubtask(_task.id, subtask.id);
+
+    // Update local task state
     setState(() {
       List<SubTaskModel> updatedSubtasks = List.from(_task.subTasks);
       updatedSubtasks.removeAt(index);

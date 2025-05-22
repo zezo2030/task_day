@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fluentui_icons/fluentui_icons.dart';
 import 'package:go_router/go_router.dart';
-import 'package:task_day/controller/cubit/habit_cubit.dart';
+import 'package:task_day/controller/habit_cubit/habit_cubit.dart';
 import 'package:task_day/models/habit_model.dart';
 import 'package:task_day/widgets/measurable_habit_card.dart';
 import 'package:task_day/widgets/non_measurable_habit_card.dart';

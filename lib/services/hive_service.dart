@@ -120,14 +120,29 @@ class HiveService {
     final box = getHabitsBox();
     final habit = box.get(id);
     if (habit != null) {
-      HabitModel updatedHabit;
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
 
+      // Remove today's date from completedDates
+      List<DateTime> updatedCompletedDates =
+          habit.completedDates.where((date) {
+            final habitDate = DateTime(date.year, date.month, date.day);
+            return !habitDate.isAtSameMomentAs(today);
+          }).toList();
+
+      HabitModel updatedHabit;
       if (habit.isMeasurable) {
-        // Reset currentValue to 0
-        updatedHabit = habit.copyWith(currentValue: 0);
+        // Reset currentValue to 0 and update completedDates
+        updatedHabit = habit.copyWith(
+          currentValue: 0,
+          completedDates: updatedCompletedDates,
+        );
       } else {
-        // Reset isDone to false
-        updatedHabit = habit.copyWith(isDone: false);
+        // Reset isDone to false and update completedDates
+        updatedHabit = habit.copyWith(
+          isDone: false,
+          completedDates: updatedCompletedDates,
+        );
       }
 
       await box.put(id, updatedHabit);

@@ -8,7 +8,7 @@ part of 'task_model.dart';
 
 class SubTaskModelAdapter extends TypeAdapter<SubTaskModel> {
   @override
-  final int typeId = 0;
+  final int typeId = 1;
 
   @override
   SubTaskModel read(BinaryReader reader) {
@@ -48,7 +48,7 @@ class SubTaskModelAdapter extends TypeAdapter<SubTaskModel> {
 
 class TaskModelAdapter extends TypeAdapter<TaskModel> {
   @override
-  final int typeId = 1;
+  final int typeId = 2;
 
   @override
   TaskModel read(BinaryReader reader) {

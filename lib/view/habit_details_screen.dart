@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:task_day/models/habit_model.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:task_day/controller/cubit/habit_cubit.dart';
+import 'package:task_day/controller/habit_cubit/habit_cubit.dart';
 
 class HabitDetailsScreen extends StatefulWidget {
   final HabitModel habit;

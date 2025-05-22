@@ -10,7 +10,7 @@ import 'package:task_day/view/status_screen.dart';
 import 'package:task_day/view/tasks_screen.dart';
 import 'package:task_day/services/hive_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:task_day/controller/cubit/habit_cubit.dart';
+import 'package:task_day/controller/habit_cubit/habit_cubit.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(

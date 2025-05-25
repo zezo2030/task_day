@@ -44,6 +44,15 @@ final class TaskToggled extends TaskState {
   List<Object> get props => [task];
 }
 
+final class TaskUpdated extends TaskState {
+  final TaskModel task;
+
+  const TaskUpdated(this.task);
+
+  @override
+  List<Object> get props => [task];
+}
+
 final class TaskDeleted extends TaskState {
   const TaskDeleted();
 }

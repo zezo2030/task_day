@@ -18,6 +18,9 @@ class TasksScreen extends StatefulWidget {
 class _TasksScreenState extends State<TasksScreen>
     with TickerProviderStateMixin {
   final String _filterOption = 'All';
+  String _dateFilter = 'Today'; // Current selected date filter
+  DateTime? _customStartDate;
+  DateTime? _customEndDate;
   late AnimationController _animationController;
   late AnimationController _pulseController;
 
@@ -35,7 +38,7 @@ class _TasksScreenState extends State<TasksScreen>
     )..repeat(reverse: true);
 
     // Load tasks when screen initializes
-    context.read<TaskCubit>().getTasks();
+    _loadTasksBasedOnFilter();
   }
 
   @override
@@ -43,6 +46,79 @@ class _TasksScreenState extends State<TasksScreen>
     _animationController.dispose();
     _pulseController.dispose();
     super.dispose();
+  }
+
+  // Load tasks based on current date filter
+  void _loadTasksBasedOnFilter() {
+    final taskCubit = context.read<TaskCubit>();
+    switch (_dateFilter) {
+      case 'Today':
+        taskCubit.getTodayTasks();
+        break;
+      case 'Week':
+        taskCubit.getWeekTasks();
+        break;
+      case 'Month':
+        taskCubit.getMonthTasks();
+        break;
+      case 'Custom':
+        if (_customStartDate != null && _customEndDate != null) {
+          taskCubit.getTasksByDateRange(_customStartDate!, _customEndDate!);
+        } else {
+          taskCubit.getTasks();
+        }
+        break;
+      default:
+        taskCubit.getTasks();
+    }
+  }
+
+  // Handle date filter change
+  void _onDateFilterChanged(String filter) {
+    if (_dateFilter != filter) {
+      setState(() {
+        _dateFilter = filter;
+      });
+      _loadTasksBasedOnFilter();
+    }
+  }
+
+  // Show custom date range picker
+  Future<void> _showCustomDateRangePicker() async {
+    final DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDateRange:
+          _customStartDate != null && _customEndDate != null
+              ? DateTimeRange(start: _customStartDate!, end: _customEndDate!)
+              : null,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: Color(0xFF4F46E5),
+              onPrimary: Colors.white,
+              surface: Color(0xFF191B2F),
+              onSurface: Colors.white,
+            ),
+            dialogTheme: const DialogThemeData(
+              backgroundColor: Color(0xFF0F1227),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        _customStartDate = picked.start;
+        _customEndDate = picked.end;
+        _dateFilter = 'Custom';
+      });
+      context.read<TaskCubit>().getTasksByDateRange(picked.start, picked.end);
+    }
   }
 
   List<TaskModel> _getFilteredTasks(List<TaskModel> tasks) {
@@ -217,18 +293,26 @@ class _TasksScreenState extends State<TasksScreen>
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        _dateFilterButton('Today', true),
-                        _dateFilterButton('Week', false),
-                        _dateFilterButton('Month', false),
+                        _dateFilterButton('Today', _dateFilter == 'Today'),
+                        _dateFilterButton('Week', _dateFilter == 'Week'),
+                        _dateFilterButton('Month', _dateFilter == 'Month'),
                         Container(
                           height: 38.h,
                           width: 38.w,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.08),
+                            color:
+                                _dateFilter == 'Custom'
+                                    ? const Color(0xFF4F46E5).withOpacity(0.15)
+                                    : Colors.white.withOpacity(0.08),
                             borderRadius: BorderRadius.circular(12.r),
                             border: Border.all(
-                              color: const Color(0xFF4F46E5).withOpacity(0.2),
-                              width: 1,
+                              color:
+                                  _dateFilter == 'Custom'
+                                      ? const Color(0xFF4F46E5).withOpacity(0.5)
+                                      : const Color(
+                                        0xFF4F46E5,
+                                      ).withOpacity(0.2),
+                              width: _dateFilter == 'Custom' ? 1.5 : 1,
                             ),
                           ),
                           child: IconButton(
@@ -237,15 +321,73 @@ class _TasksScreenState extends State<TasksScreen>
                               color: const Color(0xFF4F46E5),
                               size: 18.sp,
                             ),
-                            onPressed: () {
-                              // Calendar picker
-                            },
+                            onPressed: _showCustomDateRangePicker,
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
+
+                // Show custom date range info if selected
+                if (_dateFilter == 'Custom' &&
+                    _customStartDate != null &&
+                    _customEndDate != null)
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 20.w,
+                      vertical: 8.h,
+                    ),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12.w,
+                        vertical: 8.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF4F46E5).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8.r),
+                        border: Border.all(
+                          color: const Color(0xFF4F46E5).withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.date_range,
+                            color: const Color(0xFF4F46E5),
+                            size: 16.sp,
+                          ),
+                          SizedBox(width: 8.w),
+                          Text(
+                            '${DateFormat('MMM d').format(_customStartDate!)} - ${DateFormat('MMM d, y').format(_customEndDate!)}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12.sp,
+                              color: const Color(0xFF4F46E5),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          SizedBox(width: 8.w),
+                          InkWell(
+                            onTap: () {
+                              setState(() {
+                                _dateFilter = 'Today';
+                                _customStartDate = null;
+                                _customEndDate = null;
+                              });
+                              _loadTasksBasedOnFilter();
+                            },
+                            child: Icon(
+                              Icons.close,
+                              color: const Color(0xFF4F46E5),
+                              size: 16.sp,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
 
                 SizedBox(height: 16.h),
 
@@ -284,7 +426,7 @@ class _TasksScreenState extends State<TasksScreen>
                           state is TaskDeleted) {
                         // Refresh tasks after any modification
                         WidgetsBinding.instance.addPostFrameCallback((_) {
-                          context.read<TaskCubit>().getTasks();
+                          _loadTasksBasedOnFilter();
                         });
                         return const Center(
                           child: CircularProgressIndicator(
@@ -307,9 +449,7 @@ class _TasksScreenState extends State<TasksScreen>
 
   Widget _dateFilterButton(String text, bool isSelected) {
     return InkWell(
-      onTap: () {
-        // Change date filter
-      },
+      onTap: () => _onDateFilterChanged(text),
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
         decoration: BoxDecoration(
@@ -349,6 +489,11 @@ class _TasksScreenState extends State<TasksScreen>
   }
 
   Widget _buildEmptyState() {
+    String emptyMessage = 'No ${_filterOption.toLowerCase()} tasks';
+    if (_dateFilter != 'All') {
+      emptyMessage += ' for ${_dateFilter.toLowerCase()}';
+    }
+
     return Center(
       child: AnimatedBuilder(
         animation: _animationController,
@@ -365,11 +510,12 @@ class _TasksScreenState extends State<TasksScreen>
                 ),
                 SizedBox(height: 20.h),
                 Text(
-                  'No ${_filterOption.toLowerCase()} tasks',
+                  emptyMessage,
                   style: GoogleFonts.poppins(
                     fontSize: 20.sp,
                     color: Colors.grey.shade400,
                   ),
+                  textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 12.h),
                 Text(

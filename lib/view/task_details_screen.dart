@@ -17,14 +17,12 @@ class TaskDetailsScreen extends StatefulWidget {
 
 class _TaskDetailsScreenState extends State<TaskDetailsScreen>
     with SingleTickerProviderStateMixin {
-  late TaskModel _task;
   late TextEditingController _subtaskController;
   final FocusNode _subtaskFocus = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    _task = widget.task;
     _subtaskController = TextEditingController();
   }
 
@@ -37,16 +35,6 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Get the priority color based on task priority
-    final Color priorityColor = _getPriorityColor(_task.priority);
-
-    // Calculate progress
-    final int totalSubtasks = _task.subTasks.length;
-    final int completedSubtasks =
-        _task.subTasks.where((st) => st.isDone).length;
-    final double progress =
-        totalSubtasks > 0 ? completedSubtasks / totalSubtasks : 0.0;
-
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -70,14 +58,32 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
                 behavior: SnackBarBehavior.floating,
               ),
             );
-          } else if (state is SubtaskAdded ||
-              state is SubtaskToggled ||
-              state is SubtaskDeleted) {
-            // Refresh task data when subtask operations complete
-            context.read<TaskCubit>().getTasks();
           }
         },
         builder: (context, state) {
+          // Get the current task from state or use the initial task
+          TaskModel currentTask = widget.task;
+          if (state is TaskUpdated) {
+            currentTask = state.task;
+          }
+
+          // Get the priority color based on task priority
+          final Color priorityColor = _getPriorityColor(currentTask.priority);
+
+          // Calculate progress
+          final int totalSubtasks = currentTask.subTasks.length;
+          final int completedSubtasks =
+              currentTask.subTasks.where((st) => st.isDone).length;
+          final double progress =
+              totalSubtasks > 0 ? completedSubtasks / totalSubtasks : 0.0;
+
+          // Check if all subtasks are completed
+          final bool allSubtasksCompleted =
+              currentTask.subTasks.isEmpty ||
+              currentTask.subTasks.every((subtask) => subtask.isDone);
+          final bool canCompleteTask =
+              currentTask.isDone || allSubtasksCompleted;
+
           return Scaffold(
             backgroundColor: Colors.transparent,
             body: SafeArea(
@@ -134,7 +140,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
                               size: 18.sp,
                             ),
                           ),
-                          onPressed: () => Navigator.pop(context, _task),
+                          onPressed: () => Navigator.pop(context, currentTask),
                         ),
                         actions: [
                           IconButton(
@@ -181,7 +187,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
                                       borderRadius: BorderRadius.circular(12.r),
                                     ),
                                     child: Text(
-                                      _getPriorityText(_task.priority),
+                                      _getPriorityText(currentTask.priority),
                                       style: GoogleFonts.poppins(
                                         fontSize: 12.sp,
                                         fontWeight: FontWeight.w600,
@@ -193,16 +199,39 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
                                   // Task completion toggle
                                   InkWell(
                                     onTap: () {
+                                      // Check if all subtasks are completed before allowing task completion
+                                      if (!canCompleteTask) {
+                                        // Show error message if not all subtasks are completed
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'Complete all subtasks before marking this task as done',
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 14.sp,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                            backgroundColor: Colors.orange
+                                                .withOpacity(0.9),
+                                            behavior: SnackBarBehavior.floating,
+                                            duration: const Duration(
+                                              seconds: 3,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12.r),
+                                            ),
+                                          ),
+                                        );
+                                        return;
+                                      }
+
                                       // Use TaskCubit to toggle task completion
                                       context.read<TaskCubit>().toggleTask(
-                                        _task,
+                                        currentTask,
                                       );
-
-                                      setState(() {
-                                        _task = _task.copyWith(
-                                          isDone: !_task.isDone,
-                                        );
-                                      });
                                     },
                                     borderRadius: BorderRadius.circular(12.r),
                                     child: Container(
@@ -212,9 +241,11 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
                                       ),
                                       decoration: BoxDecoration(
                                         color:
-                                            _task.isDone
+                                            currentTask.isDone
                                                 ? Colors.green.withOpacity(0.15)
-                                                : Colors.grey.withOpacity(0.15),
+                                                : canCompleteTask
+                                                ? Colors.grey.withOpacity(0.15)
+                                                : Colors.red.withOpacity(0.1),
                                         borderRadius: BorderRadius.circular(
                                           12.r,
                                         ),
@@ -222,27 +253,39 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
                                       child: Row(
                                         children: [
                                           Icon(
-                                            _task.isDone
+                                            currentTask.isDone
                                                 ? Icons.check_circle
-                                                : Icons.circle_outlined,
+                                                : canCompleteTask
+                                                ? Icons.circle_outlined
+                                                : Icons.lock_outline,
                                             color:
-                                                _task.isDone
+                                                currentTask.isDone
                                                     ? Colors.green
-                                                    : Colors.grey,
+                                                    : canCompleteTask
+                                                    ? Colors.grey
+                                                    : Colors.red.withOpacity(
+                                                      0.7,
+                                                    ),
                                             size: 16.sp,
                                           ),
                                           SizedBox(width: 6.w),
                                           Text(
-                                            _task.isDone
+                                            currentTask.isDone
                                                 ? 'Completed'
-                                                : 'In Progress',
+                                                : canCompleteTask
+                                                ? 'In Progress'
+                                                : 'Complete Subtasks',
                                             style: GoogleFonts.poppins(
                                               fontSize: 12.sp,
                                               fontWeight: FontWeight.w600,
                                               color:
-                                                  _task.isDone
+                                                  currentTask.isDone
                                                       ? Colors.green
-                                                      : Colors.grey,
+                                                      : canCompleteTask
+                                                      ? Colors.grey
+                                                      : Colors.red.withOpacity(
+                                                        0.7,
+                                                      ),
                                             ),
                                           ),
                                         ],
@@ -256,7 +299,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
 
                               // Task title
                               Text(
-                                _task.title,
+                                currentTask.title,
                                 style: GoogleFonts.poppins(
                                   fontSize: 24.sp,
                                   fontWeight: FontWeight.bold,
@@ -279,7 +322,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
                                   ),
                                   SizedBox(width: 8.w),
                                   Text(
-                                    "${DateFormat('MMM d, y').format(_task.startDate)} - ${DateFormat('MMM d, y').format(_task.endDate)}",
+                                    "${DateFormat('MMM d, y').format(currentTask.startDate)} - ${DateFormat('MMM d, y').format(currentTask.endDate)}",
                                     style: GoogleFonts.poppins(
                                       fontSize: 14.sp,
                                       color: Colors.white.withOpacity(0.7),
@@ -362,7 +405,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
                                   ),
                                 ),
                                 child: Text(
-                                  _task.description,
+                                  currentTask.description,
                                   style: GoogleFonts.poppins(
                                     fontSize: 14.sp,
                                     color: Colors.white.withOpacity(0.8),
@@ -466,13 +509,14 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
                                       filled: true,
                                       fillColor: Colors.transparent,
                                     ),
-                                    onSubmitted: (_) => _addSubTask(),
+                                    onSubmitted:
+                                        (_) => _addSubTask(currentTask),
                                   ),
                                 ),
                               ),
                               SizedBox(width: 12.w),
                               InkWell(
-                                onTap: _addSubTask,
+                                onTap: () => _addSubTask(currentTask),
                                 borderRadius: BorderRadius.circular(12.r),
                                 child: Container(
                                   padding: EdgeInsets.all(12.w),
@@ -504,7 +548,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
                       SliverToBoxAdapter(child: SizedBox(height: 16.h)),
 
                       // Subtasks list
-                      _task.subTasks.isEmpty
+                      currentTask.subTasks.isEmpty
                           ? SliverToBoxAdapter(
                             child: Container(
                               height: 300.h,
@@ -516,12 +560,16 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
                               context,
                               index,
                             ) {
-                              final subtask = _task.subTasks[index];
+                              final subtask = currentTask.subTasks[index];
                               return Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 16.w),
-                                child: _buildSubtaskItem(subtask, index),
+                                child: _buildSubtaskItem(
+                                  subtask,
+                                  index,
+                                  currentTask,
+                                ),
                               );
-                            }, childCount: _task.subTasks.length),
+                            }, childCount: currentTask.subTasks.length),
                           ),
 
                       // Bottom padding
@@ -540,125 +588,322 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
   // Empty state for subtasks
   Widget _buildEmptySubtasks() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.checklist_rounded,
-            size: 60.sp,
-            color: Colors.white.withOpacity(0.2),
+      child: Container(
+        padding: EdgeInsets.all(28.w),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white.withOpacity(0.05),
+              Colors.white.withOpacity(0.02),
+            ],
           ),
-          SizedBox(height: 16.h),
-          Text(
-            "No subtasks yet",
-            style: GoogleFonts.poppins(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w500,
-              color: Colors.white.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(24.r),
+          border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: EdgeInsets.all(18.w),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    const Color(0xFF4F46E5).withOpacity(0.2),
+                    const Color(0xFF7C3AED).withOpacity(0.1),
+                  ],
+                ),
+              ),
+              child: Icon(
+                Icons.playlist_add_check_rounded,
+                size: 44.sp,
+                color: const Color(0xFF4F46E5),
+              ),
             ),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            "Add subtasks to break down your task",
-            style: GoogleFonts.poppins(
-              fontSize: 14.sp,
-              color: Colors.white.withOpacity(0.3),
+            SizedBox(height: 20.h),
+            Text(
+              "No subtasks yet",
+              style: GoogleFonts.poppins(
+                fontSize: 18.sp,
+                fontWeight: FontWeight.w600,
+                color: Colors.white.withOpacity(0.8),
+              ),
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+            SizedBox(height: 10.h),
+            Text(
+              "Break down your task into smaller,\nmanageable subtasks",
+              style: GoogleFonts.poppins(
+                fontSize: 14.sp,
+                color: Colors.white.withOpacity(0.5),
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 16.h),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 7.h),
+              decoration: BoxDecoration(
+                color: const Color(0xFF4F46E5).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(
+                  color: const Color(0xFF4F46E5).withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.lightbulb_outline_rounded,
+                    size: 15.sp,
+                    color: const Color(0xFF4F46E5),
+                  ),
+                  SizedBox(width: 7.w),
+                  Text(
+                    "Use the input above to add subtasks",
+                    style: GoogleFonts.poppins(
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF4F46E5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   // Single subtask item
-  Widget _buildSubtaskItem(SubTaskModel subtask, int index) {
+  Widget _buildSubtaskItem(
+    SubTaskModel subtask,
+    int index,
+    TaskModel currentTask,
+  ) {
+    // Get the priority color for this task
+    final Color taskPriorityColor = _getPriorityColor(currentTask.priority);
     return Container(
-      margin: EdgeInsets.only(bottom: 12.h),
+      margin: EdgeInsets.only(bottom: 16.h),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(16.r),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors:
+              subtask.isDone
+                  ? [
+                    taskPriorityColor.withOpacity(0.08),
+                    taskPriorityColor.withOpacity(0.05),
+                  ]
+                  : [
+                    Colors.white.withOpacity(0.08),
+                    Colors.white.withOpacity(0.03),
+                  ],
+        ),
+        borderRadius: BorderRadius.circular(20.r),
         border: Border.all(
           color:
               subtask.isDone
-                  ? const Color(0xFF4F46E5).withOpacity(0.3)
-                  : Colors.white.withOpacity(0.06),
+                  ? taskPriorityColor.withOpacity(0.4)
+                  : Colors.white.withOpacity(0.12),
           width: 1.5,
         ),
+        boxShadow: [
+          BoxShadow(
+            color:
+                subtask.isDone
+                    ? taskPriorityColor.withOpacity(0.1)
+                    : Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Dismissible(
         key: Key(subtask.id),
         background: Container(
           alignment: Alignment.centerRight,
-          padding: EdgeInsets.only(right: 20.w),
+          padding: EdgeInsets.only(right: 24.w),
           decoration: BoxDecoration(
-            color: Colors.red.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(16.r),
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [Colors.transparent, Colors.red.withOpacity(0.3)],
+            ),
+            borderRadius: BorderRadius.circular(20.r),
           ),
-          child: Icon(
-            Icons.delete_outline,
-            color: Colors.white.withOpacity(0.8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.delete_sweep_rounded,
+                color: Colors.white,
+                size: 24.sp,
+              ),
+              SizedBox(height: 4.h),
+              Text(
+                'Delete',
+                style: GoogleFonts.poppins(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ],
           ),
         ),
         direction: DismissDirection.endToStart,
         onDismissed: (direction) {
-          _removeSubtask(index);
+          _removeSubtask(subtask, currentTask);
         },
-        child: ListTile(
-          contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
-          leading: InkWell(
-            onTap: () => _toggleSubtaskStatus(index),
-            borderRadius: BorderRadius.circular(20.r),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 24.w,
-              height: 24.h,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color:
-                    subtask.isDone
-                        ? const Color(0xFF4F46E5).withOpacity(0.2)
-                        : Colors.white.withOpacity(0.05),
-                border: Border.all(
-                  color:
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+          child: Row(
+            children: [
+              // Custom checkbox with animation
+              GestureDetector(
+                onTap: () => _toggleSubtaskStatus(subtask, currentTask),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  width: 28.w,
+                  height: 28.h,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient:
+                        subtask.isDone
+                            ? LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                taskPriorityColor,
+                                taskPriorityColor.withOpacity(0.8),
+                              ],
+                            )
+                            : null,
+                    color: subtask.isDone ? null : Colors.transparent,
+                    border: Border.all(
+                      color:
+                          subtask.isDone
+                              ? Colors.transparent
+                              : Colors.white.withOpacity(0.4),
+                      width: 2,
+                    ),
+                    boxShadow:
+                        subtask.isDone
+                            ? [
+                              BoxShadow(
+                                color: taskPriorityColor.withOpacity(0.4),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ]
+                            : null,
+                  ),
+                  child:
                       subtask.isDone
-                          ? const Color(0xFF4F46E5)
-                          : Colors.white.withOpacity(0.3),
-                  width: 1.5,
+                          ? Icon(
+                            Icons.check_rounded,
+                            size: 18.sp,
+                            color: Colors.white,
+                          )
+                          : null,
                 ),
               ),
-              child:
-                  subtask.isDone
-                      ? Icon(
-                        Icons.check,
-                        size: 16.sp,
-                        color: const Color(0xFF4F46E5),
-                      )
-                      : null,
-            ),
-          ),
-          title: Text(
-            subtask.title,
-            style: GoogleFonts.poppins(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w500,
-              color:
-                  subtask.isDone ? Colors.white.withOpacity(0.6) : Colors.white,
-              decoration: subtask.isDone ? TextDecoration.lineThrough : null,
-              decorationColor: Colors.white.withOpacity(0.4),
-              decorationThickness: 2,
-            ),
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: Icon(
-                  Icons.delete_outline,
-                  color: Colors.white.withOpacity(0.6),
-                  size: 20.sp,
+
+              SizedBox(width: 16.w),
+
+              // Task content
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 200),
+                      style: GoogleFonts.poppins(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w600,
+                        color:
+                            subtask.isDone
+                                ? Colors.white.withOpacity(0.7)
+                                : Colors.white,
+                        decoration:
+                            subtask.isDone
+                                ? TextDecoration.lineThrough
+                                : TextDecoration.none,
+                        decorationColor: Colors.white.withOpacity(0.5),
+                        decorationThickness: 2,
+                      ),
+                      child: Text(subtask.title),
+                    ),
+
+                    if (subtask.isDone) ...[
+                      SizedBox(height: 4.h),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.check_circle_rounded,
+                            size: 14.sp,
+                            color: taskPriorityColor,
+                          ),
+                          SizedBox(width: 6.w),
+                          Text(
+                            'Completed',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w500,
+                              color: taskPriorityColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
                 ),
-                onPressed: () => _removeSubtask(index),
+              ),
+
+              // Action buttons
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Priority indicator (optional visual enhancement)
+                  Container(
+                    width: 4.w,
+                    height: 24.h,
+                    decoration: BoxDecoration(
+                      color:
+                          subtask.isDone
+                              ? taskPriorityColor
+                              : Colors.white.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(2.r),
+                    ),
+                  ),
+
+                  SizedBox(width: 12.w),
+
+                  // Delete button
+                  GestureDetector(
+                    onTap: () => _removeSubtask(subtask, currentTask),
+                    child: Container(
+                      padding: EdgeInsets.all(8.w),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.1),
+                      ),
+                      child: Icon(
+                        Icons.close_rounded,
+                        color: Colors.white.withOpacity(0.7),
+                        size: 16.sp,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -668,7 +913,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
   }
 
   // Add a new subtask
-  void _addSubTask() {
+  void _addSubTask(TaskModel currentTask) {
     final String title = _subtaskController.text.trim();
     if (title.isNotEmpty) {
       final newSubtask = SubTaskModel(
@@ -677,47 +922,24 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
       );
 
       // Use TaskCubit to add subtask
-      context.read<TaskCubit>().addSubtask(_task.id, newSubtask);
+      context.read<TaskCubit>().addSubtask(currentTask.id, newSubtask);
 
-      // Update local task state and clear input
-      setState(() {
-        List<SubTaskModel> updatedSubtasks = List.from(_task.subTasks);
-        updatedSubtasks.add(newSubtask);
-        _task = _task.copyWith(subTasks: updatedSubtasks);
-        _subtaskController.clear();
-      });
+      // Clear input
+      _subtaskController.clear();
       FocusScope.of(context).requestFocus(_subtaskFocus);
     }
   }
 
   // Toggle subtask completion status
-  void _toggleSubtaskStatus(int index) {
-    final subtask = _task.subTasks[index];
-
+  void _toggleSubtaskStatus(SubTaskModel subtask, TaskModel currentTask) {
     // Use TaskCubit to toggle subtask
-    context.read<TaskCubit>().toggleSubtask(_task.id, subtask);
-
-    // Update local task state
-    setState(() {
-      List<SubTaskModel> updatedSubtasks = List.from(_task.subTasks);
-      updatedSubtasks[index] = subtask.copyWith(isDone: !subtask.isDone);
-      _task = _task.copyWith(subTasks: updatedSubtasks);
-    });
+    context.read<TaskCubit>().toggleSubtask(currentTask.id, subtask);
   }
 
   // Remove a subtask
-  void _removeSubtask(int index) {
-    final subtask = _task.subTasks[index];
-
+  void _removeSubtask(SubTaskModel subtask, TaskModel currentTask) {
     // Use TaskCubit to delete subtask
-    context.read<TaskCubit>().deleteSubtask(_task.id, subtask.id);
-
-    // Update local task state
-    setState(() {
-      List<SubTaskModel> updatedSubtasks = List.from(_task.subTasks);
-      updatedSubtasks.removeAt(index);
-      _task = _task.copyWith(subTasks: updatedSubtasks);
-    });
+    context.read<TaskCubit>().deleteSubtask(currentTask.id, subtask.id);
   }
 
   // Helper method to get priority color

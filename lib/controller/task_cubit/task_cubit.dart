@@ -29,12 +29,69 @@ class TaskCubit extends Cubit<TaskState> {
     }
   }
 
+  // get tasks for today
+  Future<void> getTodayTasks() async {
+    emit(TaskLoading());
+    try {
+      final tasks = await HiveService.getTodayTasks();
+      emit(TaskLoaded(tasks));
+    } catch (e) {
+      emit(TaskError(e.toString()));
+    }
+  }
+
+  // get tasks for this week
+  Future<void> getWeekTasks() async {
+    emit(TaskLoading());
+    try {
+      final now = DateTime.now();
+      final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+      final endOfWeek = startOfWeek.add(const Duration(days: 6));
+      final tasks = await HiveService.getTasksByDateRange(
+        startOfWeek,
+        endOfWeek,
+      );
+      emit(TaskLoaded(tasks));
+    } catch (e) {
+      emit(TaskError(e.toString()));
+    }
+  }
+
+  // get tasks for this month
+  Future<void> getMonthTasks() async {
+    emit(TaskLoading());
+    try {
+      final now = DateTime.now();
+      final startOfMonth = DateTime(now.year, now.month, 1);
+      final endOfMonth = DateTime(now.year, now.month + 1, 0);
+      final tasks = await HiveService.getTasksByDateRange(
+        startOfMonth,
+        endOfMonth,
+      );
+      emit(TaskLoaded(tasks));
+    } catch (e) {
+      emit(TaskError(e.toString()));
+    }
+  }
+
+  // get tasks for custom date range
+  Future<void> getTasksByDateRange(DateTime startDate, DateTime endDate) async {
+    emit(TaskLoading());
+    try {
+      final tasks = await HiveService.getTasksByDateRange(startDate, endDate);
+      emit(TaskLoaded(tasks));
+    } catch (e) {
+      emit(TaskError(e.toString()));
+    }
+  }
+
   // toggle task
   Future<void> toggleTask(TaskModel task) async {
     emit(TaskLoading());
     try {
       await HiveService.toggleTaskCompletion(task.id);
-      emit(TaskToggled(task));
+      final updatedTask = task.copyWith(isDone: !task.isDone);
+      emit(TaskUpdated(updatedTask));
     } catch (e) {
       emit(TaskError(e.toString()));
     }
@@ -56,7 +113,10 @@ class TaskCubit extends Cubit<TaskState> {
     emit(TaskLoading());
     try {
       await HiveService.addSubtask(taskId, subtask);
-      emit(SubtaskAdded(subtask));
+      // Get the updated task from storage
+      final tasks = await HiveService.getAllTasks();
+      final updatedTask = tasks.firstWhere((task) => task.id == taskId);
+      emit(TaskUpdated(updatedTask));
     } catch (e) {
       emit(TaskError(e.toString()));
     }
@@ -67,7 +127,10 @@ class TaskCubit extends Cubit<TaskState> {
     emit(TaskLoading());
     try {
       await HiveService.deleteSubtask(taskId, subtaskId);
-      emit(SubtaskDeleted(subtaskId));
+      // Get the updated task from storage
+      final tasks = await HiveService.getAllTasks();
+      final updatedTask = tasks.firstWhere((task) => task.id == taskId);
+      emit(TaskUpdated(updatedTask));
     } catch (e) {
       emit(TaskError(e.toString()));
     }
@@ -78,7 +141,10 @@ class TaskCubit extends Cubit<TaskState> {
     emit(TaskLoading());
     try {
       await HiveService.toggleSubtaskCompletion(taskId, subtask.id);
-      emit(SubtaskToggled(subtask));
+      // Get the updated task from storage
+      final tasks = await HiveService.getAllTasks();
+      final updatedTask = tasks.firstWhere((task) => task.id == taskId);
+      emit(TaskUpdated(updatedTask));
     } catch (e) {
       emit(TaskError(e.toString()));
     }

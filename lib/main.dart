@@ -6,6 +6,7 @@ import 'package:task_day/services/hive_service.dart';
 import 'package:task_day/core/router/app_route.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:task_day/controller/habit_cubit/habit_cubit.dart';
+import 'package:task_day/controller/status_cubit/status_cubit.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,6 +34,7 @@ class MainApp extends StatelessWidget {
             BlocProvider<TaskCubit>(
               create: (context) => TaskCubit()..getTasks(),
             ),
+            BlocProvider<StatusCubit>(create: (context) => StatusCubit()),
             // Add more BlocProviders here as needed
           ],
           child: MaterialApp.router(

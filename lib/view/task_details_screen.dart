@@ -550,7 +550,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
                       // Subtasks list
                       currentTask.subTasks.isEmpty
                           ? SliverToBoxAdapter(
-                            child: Container(
+                            child: SizedBox(
                               height: 300.h,
                               child: _buildEmptySubtasks(),
                             ),

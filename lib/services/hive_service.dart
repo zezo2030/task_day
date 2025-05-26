@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:task_day/models/habit_model.dart';
 import 'package:task_day/models/task_model.dart';
+import 'package:task_day/services/stored_stats_service.dart';
 
 class HiveService {
   static const String habitsBoxName = 'habits';
@@ -20,6 +21,9 @@ class HiveService {
     // Open boxes
     await Hive.openBox<HabitModel>(habitsBoxName);
     await Hive.openBox<TaskModel>(tasksBoxName);
+
+    // Initialize stored stats service
+    await StoredStatsService.init();
 
     if (kDebugMode) {
       print('Hive initialized successfully');

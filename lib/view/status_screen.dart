@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluentui_icons/fluentui_icons.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:task_day/core/themes/app_theme.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:task_day/controller/status_cubit/status_cubit.dart';
+import 'package:task_day/services/quick_stats_service.dart';
 
 class StatusScreen extends StatefulWidget {
   const StatusScreen({super.key});
@@ -17,49 +20,6 @@ class _StatusScreenState extends State<StatusScreen>
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
 
-  // Sample data - in a real app, this would come from a provider or database
-  final Map<String, dynamic> _statusData = {
-    'tasksCompleted': 8,
-    'totalTasks': 12,
-    'tasksCompletionRate': 0.67,
-    'habitsStreak': 14,
-    'weeklyProgress': 0.82,
-    'monthlyProgress': 0.75,
-  };
-
-  final List<Map<String, dynamic>> _habitStreaks = [
-    {
-      'title': 'Morning Workout',
-      'streak': 21,
-      'icon': Icons.fitness_center,
-      'color': Colors.orange,
-    },
-    {
-      'title': 'Reading',
-      'streak': 14,
-      'icon': Icons.book,
-      'color': Colors.blue,
-    },
-    {
-      'title': 'Meditation',
-      'streak': 30,
-      'icon': Icons.self_improvement,
-      'color': Colors.purple,
-    },
-    {
-      'title': 'Drinking Water',
-      'streak': 25,
-      'icon': Icons.water_drop,
-      'color': Colors.cyan,
-    },
-    {
-      'title': 'Journaling',
-      'streak': 10,
-      'icon': Icons.edit_note,
-      'color': Colors.green,
-    },
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -72,6 +32,11 @@ class _StatusScreenState extends State<StatusScreen>
       curve: Curves.easeInOutBack,
     );
     _animationController.forward();
+
+    // تحميل البيانات باستخدام النهج الهجين
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<StatusCubit>().loadStatusData();
+    });
   }
 
   @override
@@ -99,51 +64,22 @@ class _StatusScreenState extends State<StatusScreen>
                 ),
               ),
               child: SafeArea(
-                child: CustomScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  slivers: [
-                    SliverToBoxAdapter(
-                      child: _buildHeader(context, colorScheme),
-                    ),
-                    SliverToBoxAdapter(
-                      child: _buildProgressSection(context, colorScheme),
-                    ),
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 10.h),
-                        child: Text(
-                          'Habit Streaks',
-                          style: theme.textTheme.headlineMedium,
-                        ),
-                      ),
-                    ),
-                    SliverList(
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        final item = _habitStreaks[index];
-                        final delay = Duration(milliseconds: 100 * index);
+                child: BlocBuilder<StatusCubit, StatusState>(
+                  builder: (context, state) {
+                    if (state is StatusLoading) {
+                      return _buildLoadingState(theme);
+                    } else if (state is StatusError) {
+                      return _buildErrorState(state.message, theme);
+                    } else if (state is StatusLoaded) {
+                      return _buildLoadedState(
+                        state.statusData,
+                        theme,
+                        colorScheme,
+                      );
+                    }
 
-                        return FutureBuilder(
-                          future: Future.delayed(delay),
-                          builder: (context, snapshot) {
-                            return AnimatedOpacity(
-                              duration: const Duration(milliseconds: 500),
-                              opacity:
-                                  snapshot.connectionState ==
-                                          ConnectionState.done
-                                      ? 1
-                                      : 0,
-                              child: _buildHabitStreakItem(
-                                item,
-                                theme,
-                                colorScheme,
-                              ),
-                            );
-                          },
-                        );
-                      }, childCount: _habitStreaks.length),
-                    ),
-                    SliverToBoxAdapter(child: SizedBox(height: 20.h)),
-                  ],
+                    return _buildInitialState(theme);
+                  },
                 ),
               ),
             ),
@@ -153,7 +89,123 @@ class _StatusScreenState extends State<StatusScreen>
     );
   }
 
-  Widget _buildHeader(BuildContext context, ColorScheme colorScheme) {
+  // حالات مختلفة لـ BlocBuilder
+  Widget _buildLoadingState(ThemeData theme) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(color: theme.colorScheme.primary),
+          SizedBox(height: 16.h),
+          Text('Loading your progress...', style: theme.textTheme.bodyLarge),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState(String message, ThemeData theme) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 64.sp,
+            color: theme.colorScheme.error,
+          ),
+          SizedBox(height: 16.h),
+          Text(
+            message,
+            style: theme.textTheme.bodyLarge,
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 16.h),
+          ElevatedButton(
+            onPressed: () => context.read<StatusCubit>().loadStatusData(),
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInitialState(ThemeData theme) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            FluentSystemIcons.ic_fluent_data_bar_vertical_filled,
+            size: 64.sp,
+            color: theme.colorScheme.primary,
+          ),
+          SizedBox(height: 16.h),
+          Text(
+            'Welcome to your Status Screen',
+            style: theme.textTheme.headlineSmall,
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            'Pull down to refresh your progress',
+            style: theme.textTheme.bodyMedium,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadedState(
+    StatusData statusData,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    return RefreshIndicator(
+      onRefresh: () => context.read<StatusCubit>().refreshStatusData(),
+      child: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(child: _buildHeader(statusData, colorScheme)),
+          SliverToBoxAdapter(
+            child: _buildProgressSection(statusData, theme, colorScheme),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 10.h),
+              child: Text(
+                'Habit Streaks',
+                style: theme.textTheme.headlineMedium,
+              ),
+            ),
+          ),
+          SliverList(
+            delegate: SliverChildBuilderDelegate((context, index) {
+              final habit = statusData.habitsWithStreaks[index];
+              final delay = Duration(milliseconds: 100 * index);
+
+              return FutureBuilder(
+                future: Future.delayed(delay),
+                builder: (context, snapshot) {
+                  return AnimatedOpacity(
+                    duration: const Duration(milliseconds: 500),
+                    opacity:
+                        snapshot.connectionState == ConnectionState.done
+                            ? 1
+                            : 0,
+                    child: _buildHabitStreakItem(habit, theme, colorScheme),
+                  );
+                },
+              );
+            }, childCount: statusData.habitsWithStreaks.length),
+          ),
+          SliverToBoxAdapter(child: SizedBox(height: 20.h)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(StatusData statusData, ColorScheme colorScheme) {
     return Padding(
       padding: EdgeInsets.all(20.w),
       child: ScaleTransition(
@@ -206,7 +258,9 @@ class _StatusScreenState extends State<StatusScreen>
                           ),
                         ),
                         Text(
-                          'You\'re doing great! Keep it up.',
+                          _getMotivationalMessage(
+                            statusData.todayTasksCompletionRate,
+                          ),
                           style: GoogleFonts.poppins(
                             fontSize: 14.sp,
                             color: Colors.white.withOpacity(0.7),
@@ -222,19 +276,19 @@ class _StatusScreenState extends State<StatusScreen>
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _buildStatItem(
-                    '${_statusData['tasksCompleted']}/${_statusData['totalTasks']}',
+                    '${statusData.todayCompletedTasks}/${statusData.todayTotalTasks}',
                     'Tasks',
                     Icons.task_alt,
                     colorScheme.secondary,
                   ),
                   _buildStatItem(
-                    '${_statusData['habitsStreak']}',
+                    '${statusData.currentLongestStreak}',
                     'Day Streak',
                     Icons.local_fire_department,
                     Colors.amber,
                   ),
                   _buildStatItem(
-                    '${(_statusData['tasksCompletionRate'] * 100).toInt()}%',
+                    '${(statusData.todayTasksCompletionRate * 100).toInt()}%',
                     'Rate',
                     Icons.insights,
                     colorScheme.primary,
@@ -248,13 +302,17 @@ class _StatusScreenState extends State<StatusScreen>
     );
   }
 
-  Widget _buildProgressSection(BuildContext context, ColorScheme colorScheme) {
+  Widget _buildProgressSection(
+    StatusData statusData,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w),
       child: Container(
         padding: EdgeInsets.all(20.w),
         decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
+          color: theme.cardTheme.color,
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
             BoxShadow(
@@ -267,21 +325,18 @@ class _StatusScreenState extends State<StatusScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Weekly Progress',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
+            Text('Weekly Progress', style: theme.textTheme.headlineMedium),
             SizedBox(height: 15.h),
             LinearPercentIndicator(
               animation: true,
               animationDuration: 1000,
               lineHeight: 15.0,
-              percent: _statusData['weeklyProgress'],
+              percent: statusData.weeklyProgress.clamp(0.0, 1.0),
               barRadius: Radius.circular(8.r),
               progressColor: colorScheme.secondary,
               backgroundColor: Colors.white.withOpacity(0.1),
               center: Text(
-                '${(_statusData['weeklyProgress'] * 100).toInt()}%',
+                '${(statusData.weeklyProgress * 100).toInt()}%',
                 style: GoogleFonts.poppins(
                   fontSize: 12.sp,
                   color: Colors.white,
@@ -290,21 +345,18 @@ class _StatusScreenState extends State<StatusScreen>
               ),
             ),
             SizedBox(height: 20.h),
-            Text(
-              'Monthly Progress',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
+            Text('Monthly Progress', style: theme.textTheme.headlineMedium),
             SizedBox(height: 15.h),
             LinearPercentIndicator(
               animation: true,
               animationDuration: 1000,
               lineHeight: 15.0,
-              percent: _statusData['monthlyProgress'],
+              percent: statusData.monthlyProgress.clamp(0.0, 1.0),
               barRadius: Radius.circular(8.r),
               progressColor: colorScheme.primary,
               backgroundColor: Colors.white.withOpacity(0.1),
               center: Text(
-                '${(_statusData['monthlyProgress'] * 100).toInt()}%',
+                '${(statusData.monthlyProgress * 100).toInt()}%',
                 style: GoogleFonts.poppins(
                   fontSize: 12.sp,
                   color: Colors.white,
@@ -319,7 +371,7 @@ class _StatusScreenState extends State<StatusScreen>
   }
 
   Widget _buildHabitStreakItem(
-    Map<String, dynamic> item,
+    HabitStreakInfo habit,
     ThemeData theme,
     ColorScheme colorScheme,
   ) {
@@ -333,12 +385,19 @@ class _StatusScreenState extends State<StatusScreen>
         leading: Container(
           padding: EdgeInsets.all(8.w),
           decoration: BoxDecoration(
-            color: colorScheme.secondary.withOpacity(0.2),
+            color: habit.color.withOpacity(0.2),
             borderRadius: BorderRadius.circular(8.r),
           ),
-          child: Icon(item['icon'], color: colorScheme.secondary),
+          child: Icon(habit.icon, color: habit.color),
         ),
-        title: Text(item['title'], style: theme.textTheme.bodyLarge),
+        title: Text(habit.title, style: theme.textTheme.bodyLarge),
+        subtitle:
+            habit.isCompletedToday
+                ? Text(
+                  '✓ مكتملة اليوم',
+                  style: TextStyle(color: Colors.green, fontSize: 12.sp),
+                )
+                : null,
         trailing: Container(
           padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
           decoration: BoxDecoration(
@@ -355,7 +414,7 @@ class _StatusScreenState extends State<StatusScreen>
               ),
               SizedBox(width: 4.w),
               Text(
-                '${item['streak']} days',
+                '${habit.currentStreak} days',
                 style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -403,5 +462,20 @@ class _StatusScreenState extends State<StatusScreen>
         ),
       ],
     );
+  }
+
+  // دالة لإرجاع رسائل تحفيزية بناء على معدل الإنجاز
+  String _getMotivationalMessage(double completionRate) {
+    if (completionRate >= 0.8) {
+      return 'You\'re crushing it today! 🔥';
+    } else if (completionRate >= 0.6) {
+      return 'Great progress! Keep going! 💪';
+    } else if (completionRate >= 0.4) {
+      return 'You\'re on the right track! 👍';
+    } else if (completionRate > 0) {
+      return 'Every step counts! Keep moving! 🚀';
+    } else {
+      return 'Ready to start your day? Let\'s go! ✨';
+    }
   }
 }

@@ -225,196 +225,19 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Priority indicator
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 12.w,
-                                      vertical: 6.h,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: priorityColor.withOpacity(0.15),
-                                      borderRadius: BorderRadius.circular(12.r),
-                                    ),
-                                    child: Text(
-                                      _getPriorityText(currentTask.priority),
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 12.sp,
-                                        fontWeight: FontWeight.w600,
-                                        color: priorityColor,
-                                      ),
-                                    ),
-                                  ),
-                                  const Spacer(),
-                                  // Task completion toggle
-                                  InkWell(
-                                    onTap: () {
-                                      // Check if all subtasks are completed before allowing task completion
-                                      if (!canCompleteTask) {
-                                        // Show error message if not all subtasks are completed
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              'Complete all subtasks before marking this task as done',
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 14.sp,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                            backgroundColor: Colors.orange
-                                                .withOpacity(0.9),
-                                            behavior: SnackBarBehavior.floating,
-                                            duration: const Duration(
-                                              seconds: 3,
-                                            ),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(12.r),
-                                            ),
-                                          ),
-                                        );
-                                        return;
-                                      }
-
-                                      // Use TaskCubit to toggle task completion
-                                      context.read<TaskCubit>().toggleTask(
-                                        currentTask,
-                                      );
-                                    },
-                                    borderRadius: BorderRadius.circular(12.r),
-                                    child: Container(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 12.w,
-                                        vertical: 6.h,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color:
-                                            currentTask.isDone
-                                                ? Colors.green.withOpacity(0.15)
-                                                : canCompleteTask
-                                                ? Colors.grey.withOpacity(0.15)
-                                                : Colors.red.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(
-                                          12.r,
-                                        ),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            currentTask.isDone
-                                                ? Icons.check_circle
-                                                : canCompleteTask
-                                                ? Icons.circle_outlined
-                                                : Icons.lock_outline,
-                                            color:
-                                                currentTask.isDone
-                                                    ? Colors.green
-                                                    : canCompleteTask
-                                                    ? Colors.grey
-                                                    : Colors.red.withOpacity(
-                                                      0.7,
-                                                    ),
-                                            size: 16.sp,
-                                          ),
-                                          SizedBox(width: 6.w),
-                                          Text(
-                                            currentTask.isDone
-                                                ? 'Completed'
-                                                : canCompleteTask
-                                                ? 'In Progress'
-                                                : 'Complete Subtasks',
-                                            style: GoogleFonts.poppins(
-                                              fontSize: 12.sp,
-                                              fontWeight: FontWeight.w600,
-                                              color:
-                                                  currentTask.isDone
-                                                      ? Colors.green
-                                                      : canCompleteTask
-                                                      ? Colors.grey
-                                                      : Colors.red.withOpacity(
-                                                        0.7,
-                                                      ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                              _buildTaskHeader(
+                                context,
+                                currentTask,
+                                priorityColor,
+                                canCompleteTask,
                               ),
-
-                              SizedBox(height: 14.h),
-
-                              // Task title
-                              Text(
-                                currentTask.title,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 24.sp,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                  height: 1.2,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-
                               SizedBox(height: 20.h),
-
-                              // Task dates
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.calendar_today_outlined,
-                                    color: Colors.white.withOpacity(0.7),
-                                    size: 18.sp,
-                                  ),
-                                  SizedBox(width: 8.w),
-                                  Text(
-                                    "${DateFormat('MMM d, y').format(currentTask.startDate)} - ${DateFormat('MMM d, y').format(currentTask.endDate)}",
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 14.sp,
-                                      color: Colors.white.withOpacity(0.7),
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                              SizedBox(height: 20.h),
-
-                              // Progress section
                               if (totalSubtasks > 0) ...[
-                                Row(
-                                  children: [
-                                    Text(
-                                      "Progress:",
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 14.sp,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.white.withOpacity(0.7),
-                                      ),
-                                    ),
-                                    SizedBox(width: 8.w),
-                                    Text(
-                                      "$completedSubtasks of $totalSubtasks tasks",
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 14.sp,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    const Spacer(),
-                                    Text(
-                                      "${(progress * 100).toInt()}%",
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 14.sp,
-                                        fontWeight: FontWeight.w600,
-                                        color: priorityColor,
-                                      ),
-                                    ),
-                                  ],
+                                _buildProgressSection(
+                                  completedSubtasks,
+                                  totalSubtasks,
+                                  progress,
+                                  priorityColor,
                                 ),
                                 SizedBox(height: 8.h),
                                 // Progress bar
@@ -432,39 +255,8 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
                                   ),
                                 ),
                               ],
-
                               SizedBox(height: 24.h),
-
-                              // Description section
-                              Text(
-                                "Description",
-                                style: GoogleFonts.poppins(
-                                  fontSize: 18.sp,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              SizedBox(height: 10.h),
-                              Container(
-                                padding: EdgeInsets.all(16.w),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.05),
-                                  borderRadius: BorderRadius.circular(16.r),
-                                  border: Border.all(
-                                    color: Colors.white.withOpacity(0.1),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Text(
-                                  currentTask.description,
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 14.sp,
-                                    color: Colors.white.withOpacity(0.8),
-                                    height: 1.5,
-                                  ),
-                                ),
-                              ),
-
+                              _buildDescriptionSection(currentTask),
                               SizedBox(height: 24.h),
                             ],
                           ),
@@ -473,51 +265,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
 
                       // Subtasks section header
                       SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 24.w),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                "Subtasks",
-                                style: GoogleFonts.poppins(
-                                  fontSize: 18.sp,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 12.w,
-                                  vertical: 6.h,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(
-                                    0xFF4F46E5,
-                                  ).withOpacity(0.15),
-                                  borderRadius: BorderRadius.circular(12.r),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.task_alt_outlined,
-                                      size: 16.sp,
-                                      color: const Color(0xFF4F46E5),
-                                    ),
-                                    SizedBox(width: 6.w),
-                                    Text(
-                                      "$completedSubtasks/$totalSubtasks",
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 12.sp,
-                                        fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF4F46E5),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
+                        child: _buildSubtasksHeader(
+                          completedSubtasks,
+                          totalSubtasks,
                         ),
                       ),
 
@@ -525,108 +275,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
 
                       // Add subtask input
                       SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 24.w),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.transparent,
-                                    borderRadius: BorderRadius.circular(16.r),
-                                    border: Border.all(
-                                      color:
-                                          currentTask.isDone
-                                              ? Colors.white.withOpacity(0.05)
-                                              : Colors.white.withOpacity(0.12),
-                                      width: 1.5,
-                                    ),
-                                  ),
-                                  child: TextField(
-                                    controller: _subtaskController,
-                                    focusNode: _subtaskFocus,
-                                    enabled:
-                                        !currentTask
-                                            .isDone, // Disable if task is done
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 14.sp,
-                                      color:
-                                          currentTask.isDone
-                                              ? Colors.white.withOpacity(0.3)
-                                              : Colors.white,
-                                    ),
-                                    decoration: InputDecoration(
-                                      hintText:
-                                          currentTask.isDone
-                                              ? 'Task completed'
-                                              : 'Add new subtask...',
-                                      hintStyle: GoogleFonts.poppins(
-                                        fontSize: 14.sp,
-                                        color: Colors.white.withOpacity(0.5),
-                                      ),
-                                      border: InputBorder.none,
-                                      contentPadding: EdgeInsets.symmetric(
-                                        horizontal: 16.w,
-                                        vertical: 12.h,
-                                      ),
-                                      filled: true,
-                                      fillColor:
-                                          currentTask.isDone
-                                              ? Colors.white.withOpacity(0.03)
-                                              : Colors.transparent,
-                                    ),
-                                    onSubmitted:
-                                        currentTask.isDone
-                                            ? null
-                                            : (_) => _addSubTask(currentTask),
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 12.w),
-                              InkWell(
-                                onTap:
-                                    currentTask.isDone
-                                        ? null // Disable onTap if task is done
-                                        : () => _addSubTask(currentTask),
-                                borderRadius: BorderRadius.circular(12.r),
-                                child: Container(
-                                  padding: EdgeInsets.all(12.w),
-                                  decoration: BoxDecoration(
-                                    color:
-                                        currentTask.isDone
-                                            ? Colors.grey.withOpacity(
-                                              0.2,
-                                            ) // Disabled color
-                                            : const Color(0xFF4F46E5),
-                                    borderRadius: BorderRadius.circular(12.r),
-                                    boxShadow:
-                                        currentTask.isDone
-                                            ? null
-                                            : [
-                                              BoxShadow(
-                                                color: const Color(
-                                                  0xFF4F46E5,
-                                                ).withOpacity(0.25),
-                                                blurRadius: 10,
-                                                offset: const Offset(0, 4),
-                                              ),
-                                            ],
-                                  ),
-                                  child: Icon(
-                                    Icons.add,
-                                    color:
-                                        currentTask.isDone
-                                            ? Colors.white.withOpacity(
-                                              0.3,
-                                            ) // Disabled icon color
-                                            : Colors.white,
-                                    size: 20.sp,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        child: _buildAddSubtaskRow(context, currentTask),
                       ),
 
                       SliverToBoxAdapter(child: SizedBox(height: 16.h)),
@@ -691,6 +340,366 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
             ),
           );
         },
+      ),
+    );
+  }
+
+  // Extracted widget for Task Header
+  Widget _buildTaskHeader(
+    BuildContext context,
+    TaskModel currentTask,
+    Color priorityColor,
+    bool canCompleteTask,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Priority indicator
+        Row(
+          children: [
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+              decoration: BoxDecoration(
+                color: priorityColor.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              child: Text(
+                _getPriorityText(currentTask.priority),
+                style: GoogleFonts.poppins(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w600,
+                  color: priorityColor,
+                ),
+              ),
+            ),
+            const Spacer(),
+            // Task completion toggle
+            InkWell(
+              onTap: () {
+                // Check if all subtasks are completed before allowing task completion
+                if (!canCompleteTask) {
+                  // Show error message if not all subtasks are completed
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Complete all subtasks before marking this task as done',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14.sp,
+                          color: Colors.white,
+                        ),
+                      ),
+                      backgroundColor: Colors.orange.withOpacity(0.9),
+                      behavior: SnackBarBehavior.floating,
+                      duration: const Duration(seconds: 3),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                    ),
+                  );
+                  return;
+                }
+
+                // Use TaskCubit to toggle task completion
+                context.read<TaskCubit>().toggleTask(currentTask);
+              },
+              borderRadius: BorderRadius.circular(12.r),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                decoration: BoxDecoration(
+                  color:
+                      currentTask.isDone
+                          ? Colors.green.withOpacity(0.15)
+                          : canCompleteTask
+                          ? Colors.grey.withOpacity(0.15)
+                          : Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      currentTask.isDone
+                          ? Icons.check_circle
+                          : canCompleteTask
+                          ? Icons.circle_outlined
+                          : Icons.lock_outline,
+                      color:
+                          currentTask.isDone
+                              ? Colors.green
+                              : canCompleteTask
+                              ? Colors.grey
+                              : Colors.red.withOpacity(0.7),
+                      size: 16.sp,
+                    ),
+                    SizedBox(width: 6.w),
+                    Text(
+                      currentTask.isDone
+                          ? 'Completed'
+                          : canCompleteTask
+                          ? 'In Progress'
+                          : 'Complete Subtasks',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w600,
+                        color:
+                            currentTask.isDone
+                                ? Colors.green
+                                : canCompleteTask
+                                ? Colors.grey
+                                : Colors.red.withOpacity(0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 14.h),
+        // Task title
+        Text(
+          currentTask.title,
+          style: GoogleFonts.poppins(
+            fontSize: 24.sp,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            height: 1.2,
+          ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        SizedBox(height: 20.h),
+        // Task dates
+        Row(
+          children: [
+            Icon(
+              Icons.calendar_today_outlined,
+              color: Colors.white.withOpacity(0.7),
+              size: 18.sp,
+            ),
+            SizedBox(width: 8.w),
+            Text(
+              "${DateFormat('MMM d, y').format(currentTask.startDate)} - ${DateFormat('MMM d, y').format(currentTask.endDate)}",
+              style: GoogleFonts.poppins(
+                fontSize: 14.sp,
+                color: Colors.white.withOpacity(0.7),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // Extracted widget for Progress Section
+  Widget _buildProgressSection(
+    int completedSubtasks,
+    int totalSubtasks,
+    double progress,
+    Color priorityColor,
+  ) {
+    return Row(
+      children: [
+        Text(
+          "Progress:",
+          style: GoogleFonts.poppins(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w500,
+            color: Colors.white.withOpacity(0.7),
+          ),
+        ),
+        SizedBox(width: 8.w),
+        Text(
+          "$completedSubtasks of $totalSubtasks tasks",
+          style: GoogleFonts.poppins(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        const Spacer(),
+        Text(
+          "${(progress * 100).toInt()}%",
+          style: GoogleFonts.poppins(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w600,
+            color: priorityColor,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Extracted widget for Description Section
+  Widget _buildDescriptionSection(TaskModel currentTask) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Description",
+          style: GoogleFonts.poppins(
+            fontSize: 18.sp,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        SizedBox(height: 10.h),
+        Container(
+          padding: EdgeInsets.all(16.w),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+          ),
+          child: Text(
+            currentTask.description,
+            style: GoogleFonts.poppins(
+              fontSize: 14.sp,
+              color: Colors.white.withOpacity(0.8),
+              height: 1.5,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Extracted widget for Subtasks Header
+  Widget _buildSubtasksHeader(int completedSubtasks, int totalSubtasks) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 24.w),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            "Subtasks",
+            style: GoogleFonts.poppins(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+            decoration: BoxDecoration(
+              color: const Color(0xFF4F46E5).withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.task_alt_outlined,
+                  size: 16.sp,
+                  color: const Color(0xFF4F46E5),
+                ),
+                SizedBox(width: 6.w),
+                Text(
+                  "$completedSubtasks/$totalSubtasks",
+                  style: GoogleFonts.poppins(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF4F46E5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Extracted widget for Add Subtask Row
+  Widget _buildAddSubtaskRow(BuildContext context, TaskModel currentTask) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 24.w),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(16.r),
+                border: Border.all(
+                  color:
+                      currentTask.isDone
+                          ? Colors.white.withOpacity(0.05)
+                          : Colors.white.withOpacity(0.12),
+                  width: 1.5,
+                ),
+              ),
+              child: TextField(
+                controller: _subtaskController,
+                focusNode: _subtaskFocus,
+                enabled: !currentTask.isDone, // Disable if task is done
+                style: GoogleFonts.poppins(
+                  fontSize: 14.sp,
+                  color:
+                      currentTask.isDone
+                          ? Colors.white.withOpacity(0.3)
+                          : Colors.white,
+                ),
+                decoration: InputDecoration(
+                  hintText:
+                      currentTask.isDone
+                          ? 'Task completed'
+                          : 'Add new subtask...',
+                  hintStyle: GoogleFonts.poppins(
+                    fontSize: 14.sp,
+                    color: Colors.white.withOpacity(0.5),
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 16.w,
+                    vertical: 12.h,
+                  ),
+                  filled: true,
+                  fillColor:
+                      currentTask.isDone
+                          ? Colors.white.withOpacity(0.03)
+                          : Colors.transparent,
+                ),
+                onSubmitted:
+                    currentTask.isDone ? null : (_) => _addSubTask(currentTask),
+              ),
+            ),
+          ),
+          SizedBox(width: 12.w),
+          InkWell(
+            onTap:
+                currentTask.isDone
+                    ? null // Disable onTap if task is done
+                    : () => _addSubTask(currentTask),
+            borderRadius: BorderRadius.circular(12.r),
+            child: Container(
+              padding: EdgeInsets.all(12.w),
+              decoration: BoxDecoration(
+                color:
+                    currentTask.isDone
+                        ? Colors.grey.withOpacity(0.2) // Disabled color
+                        : const Color(0xFF4F46E5),
+                borderRadius: BorderRadius.circular(12.r),
+                boxShadow:
+                    currentTask.isDone
+                        ? null
+                        : [
+                          BoxShadow(
+                            color: const Color(0xFF4F46E5).withOpacity(0.25),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+              ),
+              child: Icon(
+                Icons.add,
+                color:
+                    currentTask.isDone
+                        ? Colors.white.withOpacity(0.3) // Disabled icon color
+                        : Colors.white,
+                size: 20.sp,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

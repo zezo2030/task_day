@@ -535,19 +535,31 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
                                     color: Colors.transparent,
                                     borderRadius: BorderRadius.circular(16.r),
                                     border: Border.all(
-                                      color: Colors.white.withOpacity(0.12),
+                                      color:
+                                          currentTask.isDone
+                                              ? Colors.white.withOpacity(0.05)
+                                              : Colors.white.withOpacity(0.12),
                                       width: 1.5,
                                     ),
                                   ),
                                   child: TextField(
                                     controller: _subtaskController,
                                     focusNode: _subtaskFocus,
+                                    enabled:
+                                        !currentTask
+                                            .isDone, // Disable if task is done
                                     style: GoogleFonts.poppins(
                                       fontSize: 14.sp,
-                                      color: Colors.white,
+                                      color:
+                                          currentTask.isDone
+                                              ? Colors.white.withOpacity(0.3)
+                                              : Colors.white,
                                     ),
                                     decoration: InputDecoration(
-                                      hintText: 'Add new subtask...',
+                                      hintText:
+                                          currentTask.isDone
+                                              ? 'Task completed'
+                                              : 'Add new subtask...',
                                       hintStyle: GoogleFonts.poppins(
                                         fontSize: 14.sp,
                                         color: Colors.white.withOpacity(0.5),
@@ -558,35 +570,56 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
                                         vertical: 12.h,
                                       ),
                                       filled: true,
-                                      fillColor: Colors.transparent,
+                                      fillColor:
+                                          currentTask.isDone
+                                              ? Colors.white.withOpacity(0.03)
+                                              : Colors.transparent,
                                     ),
                                     onSubmitted:
-                                        (_) => _addSubTask(currentTask),
+                                        currentTask.isDone
+                                            ? null
+                                            : (_) => _addSubTask(currentTask),
                                   ),
                                 ),
                               ),
                               SizedBox(width: 12.w),
                               InkWell(
-                                onTap: () => _addSubTask(currentTask),
+                                onTap:
+                                    currentTask.isDone
+                                        ? null // Disable onTap if task is done
+                                        : () => _addSubTask(currentTask),
                                 borderRadius: BorderRadius.circular(12.r),
                                 child: Container(
                                   padding: EdgeInsets.all(12.w),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF4F46E5),
+                                    color:
+                                        currentTask.isDone
+                                            ? Colors.grey.withOpacity(
+                                              0.2,
+                                            ) // Disabled color
+                                            : const Color(0xFF4F46E5),
                                     borderRadius: BorderRadius.circular(12.r),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: const Color(
-                                          0xFF4F46E5,
-                                        ).withOpacity(0.25),
-                                        blurRadius: 10,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
+                                    boxShadow:
+                                        currentTask.isDone
+                                            ? null
+                                            : [
+                                              BoxShadow(
+                                                color: const Color(
+                                                  0xFF4F46E5,
+                                                ).withOpacity(0.25),
+                                                blurRadius: 10,
+                                                offset: const Offset(0, 4),
+                                              ),
+                                            ],
                                   ),
                                   child: Icon(
                                     Icons.add,
-                                    color: Colors.white,
+                                    color:
+                                        currentTask.isDone
+                                            ? Colors.white.withOpacity(
+                                              0.3,
+                                            ) // Disabled icon color
+                                            : Colors.white,
                                     size: 20.sp,
                                   ),
                                 ),
@@ -999,6 +1032,26 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
   // Add a new subtask
   void _addSubTask(TaskModel currentTask) {
     final String title = _subtaskController.text.trim();
+
+    // Check if the task is already completed
+    if (currentTask.isDone) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Cannot add subtasks to a completed task.',
+            style: GoogleFonts.poppins(fontSize: 14.sp, color: Colors.white),
+          ),
+          backgroundColor: Colors.orange.withOpacity(0.9),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+        ),
+      );
+      return; // Exit if task is completed
+    }
+
     if (title.isNotEmpty) {
       final newSubtask = SubTaskModel(
         id: DateTime.now().millisecondsSinceEpoch.toString(),

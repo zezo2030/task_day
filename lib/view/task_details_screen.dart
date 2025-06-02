@@ -21,6 +21,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
   late TextEditingController _subtaskController;
   final FocusNode _subtaskFocus = FocusNode();
 
+  // Local state to track dismissed subtasks
+  final Set<String> _dismissedSubtasks = <String>{};
+
   @override
   void initState() {
     super.initState();
@@ -59,29 +62,48 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
                 behavior: SnackBarBehavior.floating,
               ),
             );
+          } else if (state is TaskLoaded) {
+            // Clear dismissed subtasks when data is reloaded
+            setState(() {
+              _dismissedSubtasks.clear();
+            });
           }
         },
         builder: (context, state) {
           // Get the current task from state or use the initial task
           TaskModel currentTask = widget.task;
-          if (state is TaskUpdated) {
+          if (state is TaskLoaded) {
+            // Find the current task from the loaded tasks
+            try {
+              currentTask = state.tasks.firstWhere(
+                (task) => task.id == widget.task.id,
+              );
+            } catch (e) {
+              // If task not found, use the original task
+              currentTask = widget.task;
+            }
+          } else if (state is TaskUpdated) {
             currentTask = state.task;
           }
 
           // Get the priority color based on task priority
           final Color priorityColor = _getPriorityColor(currentTask.priority);
 
-          // Calculate progress
-          final int totalSubtasks = currentTask.subTasks.length;
+          // Calculate progress (excluding dismissed subtasks)
+          final visibleSubtasks =
+              currentTask.subTasks
+                  .where((st) => !_dismissedSubtasks.contains(st.id))
+                  .toList();
+          final int totalSubtasks = visibleSubtasks.length;
           final int completedSubtasks =
-              currentTask.subTasks.where((st) => st.isDone).length;
+              visibleSubtasks.where((st) => st.isDone).length;
           final double progress =
               totalSubtasks > 0 ? completedSubtasks / totalSubtasks : 0.0;
 
-          // Check if all subtasks are completed
+          // Check if all subtasks are completed (excluding dismissed ones)
           final bool allSubtasksCompleted =
-              currentTask.subTasks.isEmpty ||
-              currentTask.subTasks.every((subtask) => subtask.isDone);
+              visibleSubtasks.isEmpty ||
+              visibleSubtasks.every((subtask) => subtask.isDone);
           final bool canCompleteTask =
               currentTask.isDone || allSubtasksCompleted;
 
@@ -164,7 +186,29 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
                               ),
                             ),
                             onPressed: () {
-                              // Navigate to edit screen (not implemented yet)
+                              // Navigate to edit screen
+                              context.push(
+                                '/edit-task/${currentTask.id}',
+                                extra: currentTask,
+                              );
+                            },
+                          ),
+                          SizedBox(width: 8.w),
+                          IconButton(
+                            icon: Container(
+                              padding: EdgeInsets.all(8.w),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.red.withOpacity(0.1),
+                              ),
+                              child: Icon(
+                                Icons.delete_outline,
+                                color: Colors.red,
+                                size: 18.sp,
+                              ),
+                            ),
+                            onPressed: () {
+                              _showDeleteConfirmation(currentTask);
                             },
                           ),
                           SizedBox(width: 8.w),
@@ -555,7 +599,10 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
                       SliverToBoxAdapter(child: SizedBox(height: 16.h)),
 
                       // Subtasks list
-                      currentTask.subTasks.isEmpty
+                      currentTask.subTasks.isEmpty ||
+                              currentTask.subTasks.every(
+                                (st) => _dismissedSubtasks.contains(st.id),
+                              )
                           ? SliverToBoxAdapter(
                             child: SizedBox(
                               height: 300.h,
@@ -563,20 +610,43 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
                             ),
                           )
                           : SliverList(
-                            delegate: SliverChildBuilderDelegate((
-                              context,
-                              index,
-                            ) {
-                              final subtask = currentTask.subTasks[index];
-                              return Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 16.w),
-                                child: _buildSubtaskItem(
-                                  subtask,
-                                  index,
-                                  currentTask,
-                                ),
-                              );
-                            }, childCount: currentTask.subTasks.length),
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                // Filter out dismissed subtasks
+                                final visibleSubtasks =
+                                    currentTask.subTasks
+                                        .where(
+                                          (st) =>
+                                              !_dismissedSubtasks.contains(
+                                                st.id,
+                                              ),
+                                        )
+                                        .toList();
+
+                                if (index >= visibleSubtasks.length) {
+                                  return const SizedBox.shrink();
+                                }
+
+                                final subtask = visibleSubtasks[index];
+                                return Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 16.w,
+                                  ),
+                                  child: _buildSubtaskItem(
+                                    subtask,
+                                    index,
+                                    currentTask,
+                                  ),
+                                );
+                              },
+                              childCount:
+                                  currentTask.subTasks
+                                      .where(
+                                        (st) =>
+                                            !_dismissedSubtasks.contains(st.id),
+                                      )
+                                      .length,
+                            ),
                           ),
 
                       // Bottom padding
@@ -733,7 +803,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
         ],
       ),
       child: Dismissible(
-        key: Key(subtask.id),
+        key: ValueKey('${currentTask.id}_${subtask.id}'),
         background: Container(
           alignment: Alignment.centerRight,
           padding: EdgeInsets.only(right: 24.w),
@@ -766,8 +836,15 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
           ),
         ),
         direction: DismissDirection.endToStart,
-        onDismissed: (direction) {
+        confirmDismiss: (direction) async {
+          // Add to dismissed set immediately for UI
+          setState(() {
+            _dismissedSubtasks.add(subtask.id);
+          });
+
+          // Handle the actual removal
           _removeSubtask(subtask, currentTask);
+          return true;
         },
         child: Container(
           padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
@@ -975,5 +1052,139 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
       default:
         return 'Low Priority';
     }
+  }
+
+  // Show delete confirmation dialog
+  void _showDeleteConfirmation(TaskModel task) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: EdgeInsets.all(24.w),
+            decoration: BoxDecoration(
+              color: const Color(0xFF191B2F),
+              borderRadius: BorderRadius.circular(20.r),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.1),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Icon
+                Container(
+                  padding: EdgeInsets.all(16.w),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.delete_outline_rounded,
+                    color: Colors.red,
+                    size: 32.sp,
+                  ),
+                ),
+
+                SizedBox(height: 16.h),
+
+                // Title
+                Text(
+                  'Delete Task',
+                  style: GoogleFonts.poppins(
+                    fontSize: 20.sp,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+
+                SizedBox(height: 12.h),
+
+                // Description
+                Text(
+                  'Are you sure you want to delete "${task.title}"? This action cannot be undone.',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14.sp,
+                    color: Colors.white.withOpacity(0.7),
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+
+                SizedBox(height: 24.h),
+
+                // Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 48.h,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        child: TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: Text(
+                            'Cancel',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    SizedBox(width: 12.w),
+
+                    Expanded(
+                      child: Container(
+                        height: 48.h,
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            // Delete the task
+                            context.read<TaskCubit>().deleteTask(task.id);
+                            // Navigate back to tasks list
+                            if (context.canPop()) {
+                              context.pop();
+                            } else {
+                              context.go('/tasks');
+                            }
+                          },
+                          child: Text(
+                            'Delete',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }

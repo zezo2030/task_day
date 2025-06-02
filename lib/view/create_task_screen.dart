@@ -31,6 +31,9 @@ class _CreateTaskScreenState extends State<CreateTaskScreen>
   int _priority = 0; // 0: Low, 1: Medium, 2: High
   final List<SubTaskModel> _subTasks = [];
 
+  // Track the task being created to navigate to it
+  TaskModel? _createdTask;
+
   @override
   void initState() {
     super.initState();
@@ -77,7 +80,13 @@ class _CreateTaskScreenState extends State<CreateTaskScreen>
                 behavior: SnackBarBehavior.floating,
               ),
             );
-          } else if (state is TaskAdded) {
+          } else if (state is TaskLoaded && _createdTask != null) {
+            // Find the created task in the loaded tasks
+            final createdTask = state.tasks.firstWhere(
+              (task) => task.id == _createdTask!.id,
+              orElse: () => _createdTask!,
+            );
+
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('Task created successfully!'),
@@ -85,8 +94,12 @@ class _CreateTaskScreenState extends State<CreateTaskScreen>
                 behavior: SnackBarBehavior.floating,
               ),
             );
-            // Navigate to task details screen using app router with extra parameter
-            context.push('/task-details/${state.task.id}', extra: state.task);
+
+            // Navigate to task details screen
+            context.push('/task-details/${createdTask.id}', extra: createdTask);
+
+            // Reset the created task
+            _createdTask = null;
           }
         },
         builder: (context, state) {
@@ -919,6 +932,9 @@ class _CreateTaskScreenState extends State<CreateTaskScreen>
         priority: _priority,
         subTasks: _subTasks,
       );
+
+      // Store the created task for navigation
+      _createdTask = newTask;
 
       // Use TaskCubit to add the task
       context.read<TaskCubit>().addTask(newTask);

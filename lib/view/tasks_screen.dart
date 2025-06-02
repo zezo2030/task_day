@@ -528,7 +528,7 @@ class _TasksScreenState extends State<TasksScreen>
                 SizedBox(height: 30.h),
                 ElevatedButton.icon(
                   onPressed: () {
-                    // Add new task action
+                    context.push('/create-task');
                   },
                   icon: Icon(Icons.add, size: 20.sp),
                   label: Text('Create Task'),
@@ -886,7 +886,8 @@ class _TasksScreenState extends State<TasksScreen>
     context.push('/task-details/${task.id}', extra: task).then((updatedTask) {
       // Refresh tasks if returned from details screen with changes
       if (updatedTask != null && updatedTask is TaskModel) {
-        context.read<TaskCubit>().getTasks();
+        // Reload tasks based on current filter instead of loading all tasks
+        _loadTasksBasedOnFilter();
       }
     });
   }

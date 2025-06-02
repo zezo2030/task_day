@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:task_day/view/create_habit_screen.dart';
 import 'package:task_day/view/create_task_screen.dart';
+import 'package:task_day/view/edit_task_screen.dart';
 import 'package:task_day/view/habit_details_screen.dart';
 import 'package:task_day/view/habits_screen.dart';
 import 'package:task_day/view/home_screen.dart';
@@ -56,6 +57,29 @@ class AppRouter {
               create: (context) => HabitCubit(),
               child: const CreateHabitScreen(),
             ),
+      ),
+      GoRoute(
+        path: '/edit-task/:taskId',
+        builder: (context, state) {
+          final taskId = state.pathParameters['taskId'] ?? '';
+
+          // Try to get task from extra parameter first (for immediate navigation)
+          final extraTask = state.extra as TaskModel?;
+          if (extraTask != null && extraTask.id == taskId) {
+            return EditTaskScreen(task: extraTask);
+          }
+
+          // Fallback to Hive storage
+          final tasksBox = HiveService.getTasksBox();
+          final task = tasksBox.get(taskId);
+
+          if (task != null) {
+            return EditTaskScreen(task: task);
+          } else {
+            // Handle case when task is not found
+            return _buildNotFoundPage(context, 'Task', '/tasks');
+          }
+        },
       ),
       GoRoute(
         path: '/task-details/:taskId',

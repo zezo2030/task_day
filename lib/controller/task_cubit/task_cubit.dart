@@ -115,6 +115,19 @@ class TaskCubit extends Cubit<TaskState> {
     }
   }
 
+  // update task
+  Future<void> updateTask(TaskModel task) async {
+    emit(TaskLoading());
+    try {
+      await HiveService.updateTask(task);
+      // Reload all tasks to ensure UI consistency
+      final tasks = await HiveService.getAllTasks();
+      emit(TaskLoaded(tasks));
+    } catch (e) {
+      emit(TaskError(e.toString()));
+    }
+  }
+
   // add subtask
   Future<void> addSubtask(String taskId, SubTaskModel subtask) async {
     emit(TaskLoading());

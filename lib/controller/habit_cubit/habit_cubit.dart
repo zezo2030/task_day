@@ -102,4 +102,9 @@ class HabitCubit extends Cubit<HabitState> {
       }
     }
   }
+
+  /// Get last reset date
+  DateTime? getLastResetDate() {
+    return HiveService.getLastResetDate();
+  }
 }

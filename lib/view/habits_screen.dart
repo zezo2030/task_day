@@ -126,6 +126,12 @@ class _HabitsScreenState extends State<HabitsScreen>
                     state is HabitAdded) {
                   // Refresh the habits list after any habit state change
                   context.read<HabitCubit>().getHabits();
+                } else if (state is HabitsLoaded) {
+                  // Update local habits list and trigger UI rebuild
+                  setState(() {
+                    _allHabits.clear();
+                    _allHabits.addAll(state.habits);
+                  });
                 }
               },
               builder: (context, state) {
@@ -269,7 +275,10 @@ class _HabitsScreenState extends State<HabitsScreen>
                                       ),
                                     ],
                                   ),
-                                  SizedBox(height: 20.h),
+                                  SizedBox(height: 12.h),
+
+                                  // Last reset info
+                                  SizedBox(height: 16.h),
 
                                   // Magical stats section - apply animation
                                   AnimatedBuilder(

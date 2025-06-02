@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -84,7 +85,8 @@ class _CreateTaskScreenState extends State<CreateTaskScreen>
                 behavior: SnackBarBehavior.floating,
               ),
             );
-            Navigator.pop(context, state.task);
+            // Navigate to task details screen using app router with extra parameter
+            context.push('/task-details/${state.task.id}', extra: state.task);
           }
         },
         builder: (context, state) {
@@ -172,7 +174,13 @@ class _CreateTaskScreenState extends State<CreateTaskScreen>
                                         color: Colors.white,
                                         size: 20.sp,
                                       ),
-                                      onPressed: () => Navigator.pop(context),
+                                      onPressed: () {
+                                        if (context.canPop()) {
+                                          context.pop();
+                                        } else {
+                                          context.go('/');
+                                        }
+                                      },
                                     ),
                                   ),
                                   SizedBox(width: 20.w),

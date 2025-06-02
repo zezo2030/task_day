@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import 'package:task_day/models/habit_model.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:task_day/controller/habit_cubit/habit_cubit.dart';
@@ -16,12 +17,15 @@ class HabitDetailsScreen extends StatefulWidget {
 }
 
 class _HabitDetailsScreenState extends State<HabitDetailsScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late HabitModel _habit;
   late AnimationController _animationController;
+  late AnimationController _buttonAnimationController;
   late Animation<double> _fadeInAnimation;
   late Animation<double> _slideAnimation;
   late Animation<double> _scaleAnimation;
+  late Animation<double> _buttonPulseAnimation;
+  late Animation<double> _buttonScaleAnimation;
 
   // Animation flags for action effects
   bool _isIncrementAnimating = false;
@@ -33,13 +37,19 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen>
     super.initState();
     _habit = widget.habit;
 
-    // Initialize animation controller
+    // Initialize main animation controller
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
 
-    // Create animations
+    // Initialize button animation controller
+    _buttonAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+
+    // Create main animations
     _fadeInAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _animationController,
@@ -61,6 +71,21 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen>
       ),
     );
 
+    // Create button animations
+    _buttonPulseAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
+      CurvedAnimation(
+        parent: _buttonAnimationController,
+        curve: Curves.elasticOut,
+      ),
+    );
+
+    _buttonScaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(
+        parent: _buttonAnimationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
     // Start animation once without repeating
     _animationController.forward();
 
@@ -73,6 +98,7 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen>
   @override
   void dispose() {
     _animationController.dispose();
+    _buttonAnimationController.dispose();
     super.dispose();
   }
 
@@ -83,6 +109,12 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen>
 
     // Calculate progress
     final double progress = _habit.progress;
+
+    // Check if habit is completed today
+    final bool isCompletedToday = _isCompletedToday();
+
+    // Check if it's a measurable habit and target is reached
+    final bool isTargetReached = _isTargetReached();
 
     return BlocConsumer<HabitCubit, HabitState>(
       listener: (context, state) {
@@ -146,7 +178,13 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen>
                           size: 18.sp,
                         ),
                       ),
-                      onPressed: () => Navigator.pop(context, _habit),
+                      onPressed: () {
+                        if (context.canPop()) {
+                          context.pop(_habit);
+                        } else {
+                          context.go('/habits');
+                        }
+                      },
                     ),
                     actions: [
                       IconButton(
@@ -180,60 +218,9 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen>
                           ),
                         ),
                         onPressed: () {
-                          // Show confirmation dialog before deleting
-                          showDialog(
-                            context: context,
-                            builder:
-                                (context) => AlertDialog(
-                                  backgroundColor: const Color(0xFF191B2F),
-                                  title: Text(
-                                    'Delete Habit',
-                                    style: GoogleFonts.poppins(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  content: Text(
-                                    'Are you sure you want to delete this habit?',
-                                    style: GoogleFonts.poppins(
-                                      color: Colors.white70,
-                                    ),
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(context),
-                                      child: Text(
-                                        'Cancel',
-                                        style: GoogleFonts.poppins(
-                                          color: Colors.white70,
-                                        ),
-                                      ),
-                                    ),
-                                    TextButton(
-                                      onPressed: () {
-                                        // Delete the habit
-                                        context.read<HabitCubit>().deleteHabit(
-                                          _habit,
-                                        );
-                                        // Close the dialog
-                                        Navigator.pop(context);
-                                        // Go back to previous screen
-                                        Navigator.pop(context);
-                                      },
-                                      child: Text(
-                                        'Delete',
-                                        style: GoogleFonts.poppins(
-                                          color: Colors.red,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                          );
+                          _showDeleteConfirmationDialog();
                         },
                       ),
-                      SizedBox(width: 8.w),
                     ],
                   ),
 
@@ -242,285 +229,507 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen>
                     padding: EdgeInsets.all(16.w),
                     sliver: SliverList(
                       delegate: SliverChildListDelegate([
-                        // Habit title
-                        Row(
-                          children: [
-                            Container(
-                              padding: EdgeInsets.all(10.w),
-                              decoration: BoxDecoration(
-                                color: habitColor.withOpacity(0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                _habit.icon,
-                                color: habitColor,
-                                size: 24.sp,
-                              ),
-                            ),
-                            SizedBox(width: 12.w),
-                            Expanded(
-                              child: Text(
-                                _habit.title,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 24.sp,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        SizedBox(height: 16.h),
-
-                        // Status indicator
-                        Row(
-                          children: [
-                            Text(
-                              "Status:",
-                              style: GoogleFonts.poppins(
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                            SizedBox(width: 8.w),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 12.w,
-                                vertical: 6.h,
-                              ),
-                              decoration: BoxDecoration(
-                                color:
-                                    _isCompletedToday()
-                                        ? Colors.green.withOpacity(0.1)
-                                        : Colors.orange.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(20.r),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    _isCompletedToday()
-                                        ? Icons.check_circle
-                                        : Icons.pending,
-                                    size: 16.sp,
-                                    color:
-                                        _isCompletedToday()
-                                            ? Colors.green
-                                            : Colors.orange,
-                                  ),
-                                  SizedBox(width: 4.w),
-                                  Text(
-                                    _isCompletedToday()
-                                        ? "Completed Today"
-                                        : "Not Completed Today",
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 12.sp,
-                                      fontWeight: FontWeight.w500,
-                                      color:
-                                          _isCompletedToday()
-                                              ? Colors.green
-                                              : Colors.orange,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        SizedBox(height: 20.h),
-
-                        // Description
-                        Text(
-                          "Description",
-                          style: GoogleFonts.poppins(
-                            fontSize: 18.sp,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                        SizedBox(height: 8.h),
-                        Container(
-                          padding: EdgeInsets.all(16.w),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(16.r),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.1),
-                              width: 1,
-                            ),
-                          ),
-                          child: Text(
-                            _habit.description,
-                            style: GoogleFonts.poppins(
-                              fontSize: 14.sp,
-                              color: Colors.white.withOpacity(0.8),
-                              height: 1.5,
-                            ),
-                          ),
-                        ),
-
-                        SizedBox(height: 20.h),
-
-                        // Progress section for measurable habits
-                        if (_habit.isMeasurable &&
-                            _habit.targetValue != null) ...[
-                          Text(
-                            "Progress",
-                            style: GoogleFonts.poppins(
-                              fontSize: 18.sp,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                          SizedBox(height: 8.h),
-                          Container(
-                            padding: EdgeInsets.all(16.w),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.05),
-                              borderRadius: BorderRadius.circular(16.r),
-                            ),
-                            child: Column(
+                        // Habit title with enhanced styling
+                        FadeTransition(
+                          opacity: _fadeInAnimation,
+                          child: SlideTransition(
+                            position: Tween<Offset>(
+                              begin: const Offset(0, 0.3),
+                              end: Offset.zero,
+                            ).animate(_animationController),
+                            child: Row(
                               children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      "${_habit.currentValue ?? 0} of ${_habit.targetValue}",
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 16.sp,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
+                                Container(
+                                  padding: EdgeInsets.all(12.w),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        habitColor.withOpacity(0.3),
+                                        habitColor.withOpacity(0.1),
+                                      ],
+                                    ),
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: habitColor.withOpacity(0.3),
+                                        blurRadius: 10,
+                                        spreadRadius: 2,
                                       ),
-                                    ),
-                                    Text(
-                                      "${(progress * 100).toInt()}%",
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 16.sp,
-                                        fontWeight: FontWeight.w600,
-                                        color: habitColor,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 10.h),
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(10.r),
-                                  child: LinearProgressIndicator(
-                                    value: progress,
-                                    backgroundColor: Colors.white.withOpacity(
-                                      0.1,
-                                    ),
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      habitColor,
-                                    ),
-                                    minHeight: 8.h,
+                                    ],
+                                  ),
+                                  child: Icon(
+                                    _habit.icon,
+                                    color: habitColor,
+                                    size: 28.sp,
                                   ),
                                 ),
-                                SizedBox(height: 20.h),
-                                // Increment/decrement buttons
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    _buildActionButton(
-                                      onTap: _decrementValue,
-                                      icon: Icons.remove,
-                                      color: Colors.redAccent,
-                                    ),
-                                    SizedBox(width: 16.w),
-                                    Container(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 20.w,
-                                        vertical: 10.h,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.05),
-                                        borderRadius: BorderRadius.circular(
-                                          10.r,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        "${_habit.currentValue ?? 0}",
+                                SizedBox(width: 16.w),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        _habit.title,
                                         style: GoogleFonts.poppins(
                                           fontSize: 24.sp,
                                           fontWeight: FontWeight.bold,
                                           color: Colors.white,
                                         ),
                                       ),
-                                    ),
-                                    SizedBox(width: 16.w),
-                                    _buildActionButton(
-                                      onTap: _incrementValue,
-                                      icon: Icons.add,
-                                      color: Colors.greenAccent,
-                                    ),
-                                  ],
+                                      if (isCompletedToday) ...[
+                                        SizedBox(height: 4.h),
+                                        Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 8.w,
+                                            vertical: 4.h,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.green.withOpacity(
+                                              0.2,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              12.r,
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.green.withOpacity(
+                                                0.3,
+                                              ),
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                Icons.check_circle,
+                                                color: Colors.green,
+                                                size: 16.sp,
+                                              ),
+                                              SizedBox(width: 4.w),
+                                              Text(
+                                                'Completed Today',
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 12.sp,
+                                                  color: Colors.green,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
                           ),
-                        ],
+                        ),
 
-                        SizedBox(height: 20.h),
+                        SizedBox(height: 24.h),
 
-                        // Complete/Reset button for non-measurable habits
-                        if (!_habit.isMeasurable)
-                          Center(
-                            child: ElevatedButton(
-                              onPressed: _toggleHabitCompletion,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    _isCompletedToday()
-                                        ? Colors.orange
-                                        : Colors.green,
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 20.w,
-                                  vertical: 12.h,
+                        // Enhanced progress section for measurable habits
+                        if (_habit.isMeasurable) ...[
+                          FadeTransition(
+                            opacity: _fadeInAnimation,
+                            child: Container(
+                              padding: EdgeInsets.all(20.w),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Colors.white.withOpacity(0.1),
+                                    Colors.white.withOpacity(0.05),
+                                  ],
                                 ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30.r),
+                                borderRadius: BorderRadius.circular(20.r),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.1),
+                                  width: 1,
                                 ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: habitColor.withOpacity(0.1),
+                                    blurRadius: 15,
+                                    spreadRadius: 3,
+                                  ),
+                                ],
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
+                              child: Column(
                                 children: [
-                                  Icon(
-                                    _isCompletedToday()
-                                        ? Icons.refresh
-                                        : Icons.check,
-                                    color: Colors.white,
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        "${_habit.currentValue ?? 0} of ${_habit.targetValue}",
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 18.sp,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 12.w,
+                                          vertical: 6.h,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: habitColor.withOpacity(0.2),
+                                          borderRadius: BorderRadius.circular(
+                                            20.r,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          "${(progress * 100).toInt()}%",
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 16.sp,
+                                            fontWeight: FontWeight.w600,
+                                            color: habitColor,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  SizedBox(width: 8.w),
-                                  Text(
-                                    _isCompletedToday()
-                                        ? "Reset Completion"
-                                        : "Mark as Complete",
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 14.sp,
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600,
+                                  SizedBox(height: 16.h),
+
+                                  // Enhanced animated progress bar
+                                  TweenAnimationBuilder<double>(
+                                    duration: const Duration(
+                                      milliseconds: 1200,
                                     ),
+                                    curve: Curves.easeOutQuart,
+                                    tween: Tween<double>(
+                                      begin: 0.0,
+                                      end: progress,
+                                    ),
+                                    builder: (context, animValue, child) {
+                                      return Container(
+                                        height: 12.h,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(
+                                            6.r,
+                                          ),
+                                          color: Colors.white.withOpacity(0.1),
+                                        ),
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(
+                                            6.r,
+                                          ),
+                                          child: Stack(
+                                            children: [
+                                              LinearProgressIndicator(
+                                                value: animValue,
+                                                backgroundColor:
+                                                    Colors.transparent,
+                                                valueColor:
+                                                    AlwaysStoppedAnimation<
+                                                      Color
+                                                    >(habitColor),
+                                                minHeight: 12.h,
+                                              ),
+                                              // Shimmer effect
+                                              Positioned.fill(
+                                                child: Container(
+                                                  decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          6.r,
+                                                        ),
+                                                    gradient: LinearGradient(
+                                                      colors: [
+                                                        Colors.transparent,
+                                                        Colors.white
+                                                            .withOpacity(0.1),
+                                                        Colors.transparent,
+                                                      ],
+                                                      stops: const [
+                                                        0.0,
+                                                        0.5,
+                                                        1.0,
+                                                      ],
+                                                      begin:
+                                                          Alignment.centerLeft,
+                                                      end:
+                                                          Alignment.centerRight,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    },
                                   ),
+
+                                  SizedBox(height: 20.h),
+
+                                  // Enhanced increment/decrement buttons
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      // Decrement button
+                                      _buildEnhancedActionButton(
+                                        onTap:
+                                            (isTargetReached &&
+                                                    isCompletedToday)
+                                                ? null
+                                                : _decrementValue,
+                                        icon: Icons.remove,
+                                        color: Colors.redAccent,
+                                        isDisabled:
+                                            (isTargetReached &&
+                                                isCompletedToday) ||
+                                            (_habit.currentValue ?? 0) <= 0,
+                                        animating: _isDecrementAnimating,
+                                      ),
+
+                                      SizedBox(width: 20.w),
+
+                                      // Value display with enhanced styling
+                                      AnimatedContainer(
+                                        duration: const Duration(
+                                          milliseconds: 300,
+                                        ),
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 24.w,
+                                          vertical: 12.h,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                            colors: [
+                                              Colors.white.withOpacity(0.1),
+                                              Colors.white.withOpacity(0.05),
+                                            ],
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            16.r,
+                                          ),
+                                          border: Border.all(
+                                            color: habitColor.withOpacity(0.3),
+                                            width: 1,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: habitColor.withOpacity(
+                                                0.2,
+                                              ),
+                                              blurRadius: 8,
+                                              spreadRadius: 1,
+                                            ),
+                                          ],
+                                        ),
+                                        child: Text(
+                                          "${_habit.currentValue ?? 0}",
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 28.sp,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+
+                                      SizedBox(width: 20.w),
+
+                                      // Increment button
+                                      _buildEnhancedActionButton(
+                                        onTap:
+                                            (isTargetReached &&
+                                                    isCompletedToday)
+                                                ? null
+                                                : _incrementValue,
+                                        icon: Icons.add,
+                                        color: Colors.greenAccent,
+                                        isDisabled:
+                                            (isTargetReached &&
+                                                isCompletedToday) ||
+                                            (_habit.currentValue ?? 0) >=
+                                                (_habit.targetValue ?? 0),
+                                        animating: _isIncrementAnimating,
+                                      ),
+                                    ],
+                                  ),
+
+                                  // Disable message for completed habits
+                                  if (isTargetReached && isCompletedToday) ...[
+                                    SizedBox(height: 16.h),
+                                    Container(
+                                      padding: EdgeInsets.all(12.w),
+                                      decoration: BoxDecoration(
+                                        color: Colors.amber.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(
+                                          12.r,
+                                        ),
+                                        border: Border.all(
+                                          color: Colors.amber.withOpacity(0.3),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.info_outline,
+                                            color: Colors.amber,
+                                            size: 20.sp,
+                                          ),
+                                          SizedBox(width: 8.w),
+                                          Expanded(
+                                            child: Text(
+                                              'Habit completed for today - Cannot be modified',
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 12.sp,
+                                                color: Colors.amber,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),
                           ),
+                        ],
 
-                        SizedBox(height: 20.h),
+                        SizedBox(height: 24.h),
 
-                        // Completion history
-                        Text(
-                          "Completion History",
-                          style: GoogleFonts.poppins(
-                            fontSize: 18.sp,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                        // Description
+                        FadeTransition(
+                          opacity: _fadeInAnimation,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Description",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 20.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              SizedBox(height: 12.h),
+                              Container(
+                                padding: EdgeInsets.all(20.w),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      Colors.white.withOpacity(0.08),
+                                      Colors.white.withOpacity(0.03),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(16.r),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.1),
+                                    width: 1,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: habitColor.withOpacity(0.1),
+                                      blurRadius: 10,
+                                      spreadRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                                child: Text(
+                                  _habit.description,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 15.sp,
+                                    color: Colors.white.withOpacity(0.8),
+                                    height: 1.6,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        SizedBox(height: 8.h),
-                        _buildCompletionHistory(),
+
+                        SizedBox(height: 24.h),
+
+                        // Complete/Reset button for non-measurable habits
+                        if (!_habit.isMeasurable)
+                          FadeTransition(
+                            opacity: _fadeInAnimation,
+                            child: Center(
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                child: ElevatedButton(
+                                  onPressed: _toggleHabitCompletion,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                        isCompletedToday
+                                            ? Colors.orange
+                                            : Colors.green,
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 24.w,
+                                      vertical: 16.h,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(30.r),
+                                    ),
+                                    elevation: 8,
+                                    shadowColor: (isCompletedToday
+                                            ? Colors.orange
+                                            : Colors.green)
+                                        .withOpacity(0.3),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        isCompletedToday
+                                            ? Icons.refresh
+                                            : Icons.check,
+                                        color: Colors.white,
+                                        size: 20.sp,
+                                      ),
+                                      SizedBox(width: 8.w),
+                                      Text(
+                                        isCompletedToday
+                                            ? "Reset"
+                                            : "Mark as Complete",
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 16.sp,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                        SizedBox(height: 24.h),
+
+                        // Completion history
+                        FadeTransition(
+                          opacity: _fadeInAnimation,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Completion History",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 20.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              SizedBox(height: 12.h),
+                              _buildCompletionHistory(),
+                            ],
+                          ),
+                        ),
                       ]),
                     ),
                   ),
@@ -533,23 +742,76 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen>
     );
   }
 
-  // Helper method to build increment/decrement buttons
-  Widget _buildActionButton({
-    required VoidCallback onTap,
+  // Enhanced action button with improved animations and disabled state
+  Widget _buildEnhancedActionButton({
+    required VoidCallback? onTap,
     required IconData icon,
     required Color color,
+    required bool isDisabled,
+    required bool animating,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10.r),
-      child: Container(
-        padding: EdgeInsets.all(12.w),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.15),
-          borderRadius: BorderRadius.circular(10.r),
-        ),
-        child: Icon(icon, color: color, size: 24.sp),
-      ),
+    return AnimatedBuilder(
+      animation: _buttonAnimationController,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: animating ? _buttonPulseAnimation.value : 1.0,
+          child: Opacity(
+            opacity: isDisabled ? 0.3 : 1.0,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: isDisabled ? null : onTap,
+                borderRadius: BorderRadius.circular(16.r),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: EdgeInsets.all(16.w),
+                  decoration: BoxDecoration(
+                    gradient:
+                        isDisabled
+                            ? LinearGradient(
+                              colors: [
+                                Colors.grey.withOpacity(0.1),
+                                Colors.grey.withOpacity(0.05),
+                              ],
+                            )
+                            : LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                color.withOpacity(0.3),
+                                color.withOpacity(0.15),
+                              ],
+                            ),
+                    borderRadius: BorderRadius.circular(16.r),
+                    border: Border.all(
+                      color:
+                          isDisabled
+                              ? Colors.grey.withOpacity(0.2)
+                              : color.withOpacity(0.4),
+                      width: 1,
+                    ),
+                    boxShadow:
+                        isDisabled
+                            ? []
+                            : [
+                              BoxShadow(
+                                color: color.withOpacity(0.3),
+                                blurRadius: 8,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                  ),
+                  child: Icon(
+                    icon,
+                    color: isDisabled ? Colors.grey : color,
+                    size: 24.sp,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -557,27 +819,44 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen>
   Widget _buildCompletionHistory() {
     if (_habit.completedDates.isEmpty) {
       return Container(
-        padding: EdgeInsets.all(16.w),
+        padding: EdgeInsets.all(24.w),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(12.r),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white.withOpacity(0.05),
+              Colors.white.withOpacity(0.02),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
         ),
         child: Center(
           child: Column(
             children: [
               Icon(
                 Icons.history,
-                size: 48.sp,
+                size: 60.sp,
                 color: Colors.white.withOpacity(0.3),
               ),
-              SizedBox(height: 8.h),
+              SizedBox(height: 16.h),
               Text(
                 "No completions yet",
                 style: GoogleFonts.poppins(
-                  fontSize: 14.sp,
+                  fontSize: 16.sp,
                   fontWeight: FontWeight.w500,
                   color: Colors.white.withOpacity(0.5),
                 ),
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                "Complete this habit to start tracking your progress",
+                style: GoogleFonts.poppins(
+                  fontSize: 13.sp,
+                  color: Colors.white.withOpacity(0.3),
+                ),
+                textAlign: TextAlign.center,
               ),
             ],
           ),
@@ -591,8 +870,16 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen>
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12.r),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withOpacity(0.05),
+            Colors.white.withOpacity(0.02),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
       child: ListView.separated(
         physics: const NeverScrollableScrollPhysics(),
@@ -603,22 +890,164 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen>
                 Divider(color: Colors.white.withOpacity(0.1), height: 1),
         itemBuilder: (context, index) {
           final date = sortedDates[index];
-          return ListTile(
-            leading: Icon(Icons.check_circle, color: _habit.color),
-            title: Text(
-              DateFormat('EEEE, MMM dd, yyyy').format(date),
-              style: GoogleFonts.poppins(fontSize: 14.sp, color: Colors.white),
-            ),
-            subtitle: Text(
-              DateFormat('hh:mm a').format(date),
-              style: GoogleFonts.poppins(
-                fontSize: 12.sp,
-                color: Colors.white.withOpacity(0.6),
+          final isToday = _isDateToday(date);
+
+          return Container(
+            padding: EdgeInsets.symmetric(vertical: 8.h),
+            child: ListTile(
+              leading: Container(
+                padding: EdgeInsets.all(8.w),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      _habit.color.withOpacity(0.3),
+                      _habit.color.withOpacity(0.1),
+                    ],
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: _habit.color.withOpacity(0.2),
+                      blurRadius: 6,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+                child: Icon(Icons.check, color: _habit.color, size: 20.sp),
+              ),
+              title: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      DateFormat('EEEE, MMM dd, yyyy').format(date),
+                      style: GoogleFonts.poppins(
+                        fontSize: 15.sp,
+                        color: Colors.white,
+                        fontWeight:
+                            isToday ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                  if (isToday)
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8.w,
+                        vertical: 4.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _habit.color.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Text(
+                        'Today',
+                        style: GoogleFonts.poppins(
+                          fontSize: 10.sp,
+                          color: _habit.color,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              subtitle: Text(
+                DateFormat('hh:mm a').format(date),
+                style: GoogleFonts.poppins(
+                  fontSize: 12.sp,
+                  color: Colors.white.withOpacity(0.6),
+                ),
               ),
             ),
           );
         },
       ),
+    );
+  }
+
+  // Helper method to check if a date is today
+  bool _isDateToday(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final checkDate = DateTime(date.year, date.month, date.day);
+    return checkDate.isAtSameMomentAs(today);
+  }
+
+  // Show delete confirmation dialog
+  void _showDeleteConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: const Color(0xFF191B2F),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20.r),
+            ),
+            title: Row(
+              children: [
+                Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.red,
+                  size: 24.sp,
+                ),
+                SizedBox(width: 8.w),
+                Text(
+                  'Delete Habit',
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18.sp,
+                  ),
+                ),
+              ],
+            ),
+            content: Text(
+              'Are you sure you want to delete this habit? This action cannot be undone.',
+              style: GoogleFonts.poppins(
+                color: Colors.white70,
+                fontSize: 14.sp,
+                height: 1.4,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => context.pop(),
+                child: Text(
+                  'Cancel',
+                  style: GoogleFonts.poppins(
+                    color: Colors.white70,
+                    fontSize: 14.sp,
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  // Delete the habit
+                  context.read<HabitCubit>().deleteHabit(_habit);
+                  // Close the dialog
+                  context.pop();
+                  // Go back to previous screen
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go('/habits');
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                ),
+                child: Text(
+                  'Delete',
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14.sp,
+                  ),
+                ),
+              ),
+            ],
+          ),
     );
   }
 
@@ -692,20 +1121,30 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen>
       return true;
     }
 
-    // Also check completed dates for today
-    return _isCompletedToday();
+    return false;
   }
 
   // Increment the current value for measurable habits
   void _incrementValue() {
     if (_habit.isMeasurable && _habit.targetValue != null) {
       final currentValue = _habit.currentValue ?? 0;
+      final isCompleted = _isCompletedToday();
+      final targetReached = _isTargetReached();
+
+      // Prevent increment if already completed for today
+      if (targetReached && isCompleted) return;
+
       if (currentValue < _habit.targetValue!) {
         // Start animation
         setState(() {
           _isIncrementAnimating = true;
           // Update UI immediately
           _habit = _habit.copyWith(currentValue: currentValue + 1);
+        });
+
+        // Trigger button pulse animation
+        _buttonAnimationController.forward().then((_) {
+          _buttonAnimationController.reverse();
         });
 
         // Update the habit via cubit
@@ -745,12 +1184,23 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen>
     if (_habit.isMeasurable &&
         _habit.currentValue != null &&
         _habit.currentValue! > 0) {
+      final isCompleted = _isCompletedToday();
+      final targetReached = _isTargetReached();
+
+      // Prevent decrement if completed for today and target is reached
+      if (targetReached && isCompleted) return;
+
       final newValue = _habit.currentValue! - 1;
 
       // Start animation and update UI
       setState(() {
         _isDecrementAnimating = true;
         _habit = _habit.copyWith(currentValue: newValue);
+      });
+
+      // Trigger button pulse animation
+      _buttonAnimationController.forward().then((_) {
+        _buttonAnimationController.reverse();
       });
 
       // Update via cubit

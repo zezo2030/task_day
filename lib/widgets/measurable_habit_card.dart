@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:task_day/models/habit_model.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
-import 'package:task_day/view/habit_details_screen.dart';
 
 class MeasurableHabitCard extends StatelessWidget {
   final HabitModel habit;
@@ -38,12 +38,7 @@ class MeasurableHabitCard extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(24.r),
           onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => HabitDetailsScreen(habit: habit),
-              ),
-            );
+            context.push('/habit-details/${habit.id}', extra: habit);
           }, // For detailed view
           child: Padding(
             padding: EdgeInsets.all(16.sp),

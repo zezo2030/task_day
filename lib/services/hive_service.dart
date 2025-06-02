@@ -7,6 +7,7 @@ import 'package:task_day/services/stored_stats_service.dart';
 class HiveService {
   static const String habitsBoxName = 'habits';
   static const String tasksBoxName = 'tasks';
+  static const String settingsBoxName = 'settings';
 
   /// Initialize Hive and register adapters
   static Future<void> init() async {
@@ -21,9 +22,13 @@ class HiveService {
     // Open boxes
     await Hive.openBox<HabitModel>(habitsBoxName);
     await Hive.openBox<TaskModel>(tasksBoxName);
+    await Hive.openBox(settingsBoxName);
 
     // Initialize stored stats service
     await StoredStatsService.init();
+
+    // Check and perform daily reset if needed
+    await checkAndPerformDailyReset();
 
     if (kDebugMode) {
       print('Hive initialized successfully');
@@ -176,43 +181,70 @@ class HiveService {
     DateTime end,
   ) async {
     final box = getTasksBox();
-    return box.values.where((task) {
-      // Task is within date range if:
-      // 1. Start date is between the range or
-      // 2. End date is between the range or
-      // 3. Start date is before the range and end date is after the range
-      final taskStart = DateTime(
-        task.startDate.year,
-        task.startDate.month,
-        task.startDate.day,
-      );
-      final taskEnd = DateTime(
-        task.endDate.year,
-        task.endDate.month,
-        task.endDate.day,
-      );
-      final rangeStart = DateTime(start.year, start.month, start.day);
-      final rangeEnd = DateTime(end.year, end.month, end.day);
+    print('HiveService: getTasksByDateRange called with range: $start to $end');
+    print('HiveService: Total tasks in box: ${box.length}');
 
-      return (taskStart.isAtSameMomentAs(rangeStart) ||
-                  taskStart.isAfter(rangeStart)) &&
-              (taskStart.isAtSameMomentAs(rangeEnd) ||
-                  taskStart.isBefore(rangeEnd)) ||
-          (taskEnd.isAtSameMomentAs(rangeStart) ||
-                  taskEnd.isAfter(rangeStart)) &&
-              (taskEnd.isAtSameMomentAs(rangeEnd) ||
-                  taskEnd.isBefore(rangeEnd)) ||
-          (taskStart.isBefore(rangeStart) && taskEnd.isAfter(rangeEnd));
-    }).toList();
+    final filteredTasks =
+        box.values.where((task) {
+          // Task is within date range if:
+          // 1. Start date is between the range or
+          // 2. End date is between the range or
+          // 3. Start date is before the range and end date is after the range
+          final taskStart = DateTime(
+            task.startDate.year,
+            task.startDate.month,
+            task.startDate.day,
+          );
+          final taskEnd = DateTime(
+            task.endDate.year,
+            task.endDate.month,
+            task.endDate.day,
+          );
+          final rangeStart = DateTime(start.year, start.month, start.day);
+          final rangeEnd = DateTime(end.year, end.month, end.day);
+
+          final isInRange =
+              ((taskStart.isAtSameMomentAs(rangeStart) ||
+                      taskStart.isAfter(rangeStart)) &&
+                  (taskStart.isAtSameMomentAs(rangeEnd) ||
+                      taskStart.isBefore(rangeEnd))) ||
+              ((taskEnd.isAtSameMomentAs(rangeStart) ||
+                      taskEnd.isAfter(rangeStart)) &&
+                  (taskEnd.isAtSameMomentAs(rangeEnd) ||
+                      taskEnd.isBefore(rangeEnd))) ||
+              (taskStart.isBefore(rangeStart) && taskEnd.isAfter(rangeEnd));
+
+          if (isInRange) {
+            print(
+              'HiveService: Task "${task.title}" ($taskStart to $taskEnd) matches range',
+            );
+          }
+
+          return isInRange;
+        }).toList();
+
+    print('HiveService: Filtered ${filteredTasks.length} tasks for range');
+    return filteredTasks;
   }
 
   /// Get tasks for today
   static Future<List<TaskModel>> getTodayTasks() async {
     final DateTime now = DateTime.now();
     final DateTime today = DateTime(now.year, now.month, now.day);
-    final DateTime tomorrow = today.add(const Duration(days: 1));
+    final DateTime endOfToday = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      23,
+      59,
+      59,
+    );
 
-    return getTasksByDateRange(today, tomorrow);
+    print('HiveService: Getting today tasks for range: $today to $endOfToday');
+    final tasks = await getTasksByDateRange(today, endOfToday);
+    print('HiveService: Found ${tasks.length} tasks for today');
+
+    return tasks;
   }
 
   /// Get tasks by priority
@@ -307,6 +339,106 @@ class HiveService {
       final updatedTask = task.copyWith(subTasks: updatedSubtasks);
       await box.put(taskId, updatedTask);
     }
+  }
+
+  /// Get settings box
+  static Box getSettingsBox() {
+    return Hive.box(settingsBoxName);
+  }
+
+  /// Check and perform daily reset if needed
+  static Future<void> checkAndPerformDailyReset() async {
+    try {
+      final box = getSettingsBox();
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+
+      // Get last reset date
+      final lastResetDateString = box.get('lastResetDate');
+      DateTime? lastResetDate;
+
+      if (lastResetDateString != null) {
+        lastResetDate = DateTime.tryParse(lastResetDateString);
+      }
+
+      // If never reset or last reset was before today, perform reset
+      if (lastResetDate == null || lastResetDate.isBefore(today)) {
+        await performDailyHabitsReset();
+
+        // Save today as last reset date
+        await box.put('lastResetDate', today.toIso8601String());
+
+        if (kDebugMode) {
+          print('Daily habits reset performed for ${today.toIso8601String()}');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error in daily reset check: $e');
+      }
+    }
+  }
+
+  /// Perform daily reset for all habits
+  static Future<void> performDailyHabitsReset() async {
+    try {
+      final box = getHabitsBox();
+      final allHabits = await getAllHabits();
+
+      for (final habit in allHabits) {
+        HabitModel updatedHabit;
+
+        if (habit.isMeasurable) {
+          // Reset currentValue to 0 for measurable habits
+          updatedHabit = habit.copyWith(currentValue: 0);
+        } else {
+          // Reset isDone to false for non-measurable habits
+          updatedHabit = habit.copyWith(isDone: false);
+        }
+
+        // Save updated habit
+        await box.put(habit.id, updatedHabit);
+      }
+
+      if (kDebugMode) {
+        print('Daily reset completed for ${allHabits.length} habits');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error performing daily habits reset: $e');
+      }
+    }
+  }
+
+  /// Manually trigger daily reset (for testing or manual reset)
+  static Future<void> manualDailyReset() async {
+    await performDailyHabitsReset();
+
+    // Update last reset date
+    final box = getSettingsBox();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    await box.put('lastResetDate', today.toIso8601String());
+
+    if (kDebugMode) {
+      print('Manual daily reset performed');
+    }
+  }
+
+  /// Get last reset date
+  static DateTime? getLastResetDate() {
+    try {
+      final box = getSettingsBox();
+      final lastResetDateString = box.get('lastResetDate');
+      if (lastResetDateString != null) {
+        return DateTime.tryParse(lastResetDateString);
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error getting last reset date: $e');
+      }
+    }
+    return null;
   }
 
   /// Close Hive

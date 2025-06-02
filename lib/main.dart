@@ -12,7 +12,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Hive
-  HiveService.init();
+  await HiveService.init();
   runApp(const MainApp());
 }
 

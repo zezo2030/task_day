@@ -4,8 +4,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:task_day/models/task_model.dart';
-import 'package:task_day/view/task_details_screen.dart';
 import 'package:task_day/controller/task_cubit/task_cubit.dart';
 
 class TasksScreen extends StatefulWidget {
@@ -882,11 +882,8 @@ class _TasksScreenState extends State<TasksScreen>
   }
 
   void _showEnhancedTaskDetails(TaskModel task) {
-    // Navigate to the task details screen
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => TaskDetailsScreen(task: task)),
-    ).then((updatedTask) {
+    // Navigate to the task details screen using go_router
+    context.push('/task-details/${task.id}', extra: task).then((updatedTask) {
       // Refresh tasks if returned from details screen with changes
       if (updatedTask != null && updatedTask is TaskModel) {
         context.read<TaskCubit>().getTasks();

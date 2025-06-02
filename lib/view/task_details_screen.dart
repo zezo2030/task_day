@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:task_day/models/task_model.dart';
 import 'package:task_day/controller/task_cubit/task_cubit.dart';
 
@@ -140,7 +141,13 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen>
                               size: 18.sp,
                             ),
                           ),
-                          onPressed: () => Navigator.pop(context, currentTask),
+                          onPressed: () {
+                            if (context.canPop()) {
+                              context.pop(currentTask);
+                            } else {
+                              context.go('/tasks');
+                            }
+                          },
                         ),
                         actions: [
                           IconButton(

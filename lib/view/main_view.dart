@@ -141,12 +141,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
             elevation: 0,
             onPressed: () {
               // Handle FAB press
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const CreateTaskScreen(),
-                ),
-              );
+              context.push('/create-task');
             },
             child: Icon(
               FluentSystemIcons.ic_fluent_add_filled,

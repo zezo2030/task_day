@@ -12,7 +12,9 @@ class TaskCubit extends Cubit<TaskState> {
     emit(TaskLoading());
     try {
       await HiveService.addTask(task);
-      emit(TaskAdded(task));
+      // Reload all tasks to ensure UI consistency
+      final tasks = await HiveService.getAllTasks();
+      emit(TaskLoaded(tasks));
     } catch (e) {
       emit(TaskError(e.toString()));
     }
@@ -34,8 +36,10 @@ class TaskCubit extends Cubit<TaskState> {
     emit(TaskLoading());
     try {
       final tasks = await HiveService.getTodayTasks();
+      print('TaskCubit: getTodayTasks returned ${tasks.length} tasks');
       emit(TaskLoaded(tasks));
     } catch (e) {
+      print('TaskCubit: Error in getTodayTasks: $e');
       emit(TaskError(e.toString()));
     }
   }
@@ -90,8 +94,9 @@ class TaskCubit extends Cubit<TaskState> {
     emit(TaskLoading());
     try {
       await HiveService.toggleTaskCompletion(task.id);
-      final updatedTask = task.copyWith(isDone: !task.isDone);
-      emit(TaskUpdated(updatedTask));
+      // Reload all tasks to ensure UI consistency
+      final tasks = await HiveService.getAllTasks();
+      emit(TaskLoaded(tasks));
     } catch (e) {
       emit(TaskError(e.toString()));
     }
@@ -102,7 +107,9 @@ class TaskCubit extends Cubit<TaskState> {
     emit(TaskLoading());
     try {
       await HiveService.deleteTask(id);
-      emit(TaskDeleted());
+      // Reload all tasks to ensure UI consistency
+      final tasks = await HiveService.getAllTasks();
+      emit(TaskLoaded(tasks));
     } catch (e) {
       emit(TaskError(e.toString()));
     }
@@ -113,10 +120,9 @@ class TaskCubit extends Cubit<TaskState> {
     emit(TaskLoading());
     try {
       await HiveService.addSubtask(taskId, subtask);
-      // Get the updated task from storage
+      // Reload all tasks to ensure UI consistency
       final tasks = await HiveService.getAllTasks();
-      final updatedTask = tasks.firstWhere((task) => task.id == taskId);
-      emit(TaskUpdated(updatedTask));
+      emit(TaskLoaded(tasks));
     } catch (e) {
       emit(TaskError(e.toString()));
     }
@@ -127,10 +133,9 @@ class TaskCubit extends Cubit<TaskState> {
     emit(TaskLoading());
     try {
       await HiveService.deleteSubtask(taskId, subtaskId);
-      // Get the updated task from storage
+      // Reload all tasks to ensure UI consistency
       final tasks = await HiveService.getAllTasks();
-      final updatedTask = tasks.firstWhere((task) => task.id == taskId);
-      emit(TaskUpdated(updatedTask));
+      emit(TaskLoaded(tasks));
     } catch (e) {
       emit(TaskError(e.toString()));
     }
@@ -141,10 +146,9 @@ class TaskCubit extends Cubit<TaskState> {
     emit(TaskLoading());
     try {
       await HiveService.toggleSubtaskCompletion(taskId, subtask.id);
-      // Get the updated task from storage
+      // Reload all tasks to ensure UI consistency
       final tasks = await HiveService.getAllTasks();
-      final updatedTask = tasks.firstWhere((task) => task.id == taskId);
-      emit(TaskUpdated(updatedTask));
+      emit(TaskLoaded(tasks));
     } catch (e) {
       emit(TaskError(e.toString()));
     }

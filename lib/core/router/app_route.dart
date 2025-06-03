@@ -12,6 +12,7 @@ import 'package:task_day/view/main_view.dart';
 import 'package:task_day/view/status_screen.dart';
 import 'package:task_day/view/tasks_screen.dart';
 import 'package:task_day/view/task_details_screen.dart';
+import 'package:task_day/view/gamification_screen.dart';
 import 'package:task_day/models/task_model.dart';
 import 'package:task_day/models/habit_model.dart';
 import 'package:task_day/services/hive_service.dart';
@@ -57,6 +58,10 @@ class AppRouter {
               create: (context) => HabitCubit(),
               child: const CreateHabitScreen(),
             ),
+      ),
+      GoRoute(
+        path: '/gamification',
+        builder: (context, state) => const GamificationScreen(),
       ),
       GoRoute(
         path: '/edit-task/:taskId',

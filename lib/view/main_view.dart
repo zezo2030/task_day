@@ -9,6 +9,7 @@ import 'home_screen.dart';
 import 'habits_screen.dart';
 import 'tasks_screen.dart';
 import 'status_screen.dart';
+import 'gamification_screen.dart';
 
 class MainScreen extends StatefulWidget {
   final String? tab;

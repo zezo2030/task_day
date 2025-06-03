@@ -8,7 +8,7 @@ part of 'daily_stats_model.dart';
 
 class DailyStatsModelAdapter extends TypeAdapter<DailyStatsModel> {
   @override
-  final int typeId = 3;
+  final int typeId = 10;
 
   @override
   DailyStatsModel read(BinaryReader reader) {

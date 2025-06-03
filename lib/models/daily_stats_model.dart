@@ -5,7 +5,7 @@ part 'daily_stats_model.g.dart';
 
 /// نموذج للإحصائيات اليومية المخزنة
 /// هذا النموذج يحفظ البيانات المعقدة التي نحتاج لحسابها مرة واحدة يومياً
-@HiveType(typeId: 3)
+@HiveType(typeId: 10)
 class DailyStatsModel extends HiveObject with EquatableMixin {
   @HiveField(0)
   final String id; // تاريخ بصيغة 'yyyy-MM-dd'

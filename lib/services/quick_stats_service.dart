@@ -6,8 +6,11 @@ import 'package:task_day/models/task_model.dart';
 /// هذه الحسابات سريعة ومباشرة ولا تؤثر على الأداء
 class QuickStatsService {
   /// حساب عدد المهام المكتملة اليوم
-  static int getTodayCompletedTasks(List<TaskModel> tasks) {
-    final now = DateTime.now();
+  static int getTodayCompletedTasks(
+    List<TaskModel> tasks, {
+    DateTime? referenceDate,
+  }) {
+    final now = referenceDate ?? DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
     return tasks.where((task) {
@@ -31,8 +34,11 @@ class QuickStatsService {
   }
 
   /// حساب إجمالي المهام اليوم
-  static int getTodayTotalTasks(List<TaskModel> tasks) {
-    final now = DateTime.now();
+  static int getTodayTotalTasks(
+    List<TaskModel> tasks, {
+    DateTime? referenceDate,
+  }) {
+    final now = referenceDate ?? DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
     return tasks.where((task) {
@@ -53,50 +59,96 @@ class QuickStatsService {
   }
 
   /// حساب معدل إنجاز المهام اليوم
-  static double getTodayTasksCompletionRate(List<TaskModel> tasks) {
-    final total = getTodayTotalTasks(tasks);
+  static double getTodayTasksCompletionRate(
+    List<TaskModel> tasks, {
+    DateTime? referenceDate,
+  }) {
+    final total = getTodayTotalTasks(tasks, referenceDate: referenceDate);
     if (total == 0) return 0.0;
 
-    final completed = getTodayCompletedTasks(tasks);
+    final completed = getTodayCompletedTasks(
+      tasks,
+      referenceDate: referenceDate,
+    );
     return completed / total;
   }
 
   /// حساب عدد العادات المكتملة اليوم
-  static int getTodayCompletedHabits(List<HabitModel> habits) {
-    final now = DateTime.now();
+  static int getTodayCompletedHabits(
+    List<HabitModel> habits, {
+    DateTime? referenceDate,
+  }) {
+    final now = referenceDate ?? DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
     return habits.where((habit) {
-      // للعادات غير القابلة للقياس
+      // Check completion based on 'today' (which is derived from referenceDate or now)
+      bool habitCompletedOnDate = false;
       if (!habit.isMeasurable) {
-        return habit.isDone == true;
+        // For non-measurable habits, check if it was marked done on the specific date.
+        // This requires habit.completedDates to be accurate for the specific date.
+        habitCompletedOnDate = habit.completedDates.any(
+          (d) => DateTime(d.year, d.month, d.day).isAtSameMomentAs(today),
+        );
+      } else {
+        // For measurable habits, this logic might need adjustment if currentValue represents accumulation up to 'now'
+        // vs. value specifically on 'referenceDate'. Assuming currentValue is general or reset daily appropriately.
+        // The original logic for measurable habits was:
+        // if (habit.targetValue != null && habit.currentValue != null) {
+        //   return habit.currentValue! >= habit.targetValue!;
+        // }
+        // This part might be complex if currentValue isn't snapshot daily.
+        // For now, using a simplified check similar to non-measurable, if completed on the specific date.
+        // This assumes `isDone` or `completedDates` accurately reflects status *on* that date.
+        // A more robust solution for measurable habits on past dates might require storing historical currentValue.
+        habitCompletedOnDate = habit.completedDates.any(
+          (d) => DateTime(d.year, d.month, d.day).isAtSameMomentAs(today),
+        );
+        // If relying purely on currentValue for measurable habits for a *specific past date*:
+        // This part of the logic is tricky. If currentValue is always "current right now", then using it
+        // for a past referenceDate is incorrect. If habit.isDone or habit.completedDates is the source of truth
+        // for completion on a specific day, then that should be used.
+        // The original code for measurable habits was:
+        // if (habit.targetValue != null && habit.currentValue != null) {
+        //   return habit.currentValue! >= habit.targetValue!;
+        // }
+        // This implies currentValue is relevant. If it's meant to be for the referenceDate,
+        // this logic is fine. If currentValue is always live, it's an issue for past dates.
+        // Given the context, let's assume completedDates is the primary source for historical check.
       }
-
-      // للعادات القابلة للقياس
-      if (habit.targetValue != null && habit.currentValue != null) {
-        return habit.currentValue! >= habit.targetValue!;
-      }
-
-      return false;
+      return habitCompletedOnDate;
     }).length;
   }
 
   /// حساب معدل إنجاز العادات اليوم
-  static double getTodayHabitsCompletionRate(List<HabitModel> habits) {
+  static double getTodayHabitsCompletionRate(
+    List<HabitModel> habits, {
+    DateTime? referenceDate,
+  }) {
     if (habits.isEmpty) return 0.0;
 
-    final completed = getTodayCompletedHabits(habits);
+    final completed = getTodayCompletedHabits(
+      habits,
+      referenceDate: referenceDate,
+    );
     return completed / habits.length;
   }
 
   /// حساب أطول سلسلة عادة حالية (الحساب السريع للعرض)
-  static int getCurrentLongestStreak(List<HabitModel> habits) {
+  // This method calculates the streak *ending* on referenceDate or now.
+  static int getCurrentLongestStreak(
+    List<HabitModel> habits, {
+    DateTime? referenceDate,
+  }) {
     if (habits.isEmpty) return 0;
 
     int longestStreak = 0;
 
     for (final habit in habits) {
-      final currentStreak = _calculateCurrentStreak(habit);
+      final currentStreak = _calculateCurrentStreak(
+        habit,
+        referenceDate: referenceDate,
+      );
       if (currentStreak > longestStreak) {
         longestStreak = currentStreak;
       }
@@ -106,113 +158,100 @@ class QuickStatsService {
   }
 
   /// حساب السلسلة الحالية لعادة واحدة
-  static int _calculateCurrentStreak(HabitModel habit) {
+  static int _calculateCurrentStreak(
+    HabitModel habit, {
+    DateTime? referenceDate,
+  }) {
     if (habit.completedDates.isEmpty) return 0;
 
     final sortedDates =
         habit.completedDates.toList()
           ..sort((a, b) => b.compareTo(a)); // ترتيب تنازلي
 
-    final now = DateTime.now();
-    DateTime currentDate = DateTime(now.year, now.month, now.day);
+    final DateTime effectiveReferenceDate = referenceDate ?? DateTime.now();
+    DateTime currentDateToTest = DateTime(
+      effectiveReferenceDate.year,
+      effectiveReferenceDate.month,
+      effectiveReferenceDate.day,
+    );
     int streak = 0;
 
-    // التحقق من اليوم الحالي أولاً
-    bool foundToday = false;
-    for (final completedDate in sortedDates) {
+    // Iterate backwards from currentDateToTest
+    for (final completedDateEntry in sortedDates) {
       final completedDay = DateTime(
-        completedDate.year,
-        completedDate.month,
-        completedDate.day,
+        completedDateEntry.year,
+        completedDateEntry.month,
+        completedDateEntry.day,
       );
-
-      if (completedDay.isAtSameMomentAs(currentDate)) {
+      if (completedDay.isAtSameMomentAs(currentDateToTest)) {
         streak++;
-        foundToday = true;
-        currentDate = currentDate.subtract(const Duration(days: 1));
-        break;
+        currentDateToTest = currentDateToTest.subtract(const Duration(days: 1));
+      } else if (completedDay.isBefore(currentDateToTest)) {
+        // If there's a gap and the completed day is before the day we are testing, break.
+        // This handles non-consecutive completions correctly.
+        if (currentDateToTest.difference(completedDay).inDays > 0) break;
       }
+      // If completedDay is after currentDateToTest, it means we are looking at future completions
+      // relative to our backward counting, so we skip them until we find the one matching currentDateToTest or earlier.
     }
-
-    // إذا لم نجد اليوم الحالي، نتحقق من الأمس
-    if (!foundToday) {
-      currentDate = currentDate.subtract(const Duration(days: 1));
-      for (final completedDate in sortedDates) {
-        final completedDay = DateTime(
-          completedDate.year,
-          completedDate.month,
-          completedDate.day,
-        );
-
-        if (completedDay.isAtSameMomentAs(currentDate)) {
-          streak++;
-          currentDate = currentDate.subtract(const Duration(days: 1));
-          break;
-        }
-      }
-    }
-
-    // متابعة حساب باقي السلسلة
-    for (final completedDate in sortedDates) {
-      final completedDay = DateTime(
-        completedDate.year,
-        completedDate.month,
-        completedDate.day,
-      );
-
-      if (completedDay.isAtSameMomentAs(currentDate)) {
-        streak++;
-        currentDate = currentDate.subtract(const Duration(days: 1));
-      } else if (completedDay.isBefore(currentDate)) {
-        // فجوة في السلسلة
-        break;
-      }
-    }
-
     return streak;
   }
 
   /// حساب بيانات سريعة للعادات مع السلاسل
-  static List<HabitStreakInfo> getHabitsWithStreaks(List<HabitModel> habits) {
+  static List<HabitStreakInfo> getHabitsWithStreaks(
+    List<HabitModel> habits, {
+    DateTime? referenceDate,
+  }) {
     return habits.map((habit) {
-      final currentStreak = _calculateCurrentStreak(habit);
+      final currentStreak = _calculateCurrentStreak(
+        habit,
+        referenceDate: referenceDate,
+      );
       return HabitStreakInfo(
         id: habit.id,
         title: habit.title,
         icon: habit.icon,
         color: habit.color,
         currentStreak: currentStreak,
-        isCompletedToday: _isHabitCompletedToday(habit),
-        progress: habit.progress,
+        isCompletedToday: _isHabitCompletedToday(
+          habit,
+          referenceDate: referenceDate,
+        ),
+        progress:
+            habit
+                .progress, // Assuming habit.progress is relevant for the reference date or general
       );
     }).toList();
   }
 
   /// التحقق من إكمال العادة اليوم
-  static bool _isHabitCompletedToday(HabitModel habit) {
-    final now = DateTime.now();
+  static bool _isHabitCompletedToday(
+    HabitModel habit, {
+    DateTime? referenceDate,
+  }) {
+    final now = referenceDate ?? DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
-    // للعادات غير القابلة للقياس
-    if (!habit.isMeasurable) {
-      return habit.isDone == true;
-    }
-
-    // للعادات القابلة للقياس
-    if (habit.targetValue != null && habit.currentValue != null) {
-      return habit.currentValue! >= habit.targetValue!;
-    }
-
-    return false;
+    // Check if the habit was completed on 'today' (derived from referenceDate or now)
+    return habit.completedDates.any(
+      (d) => DateTime(d.year, d.month, d.day).isAtSameMomentAs(today),
+    );
   }
 
   /// حساب نقاط الإنتاجية السريعة (0-100)
   static double calculateQuickProductivityScore(
     List<TaskModel> tasks,
-    List<HabitModel> habits,
-  ) {
-    final tasksRate = getTodayTasksCompletionRate(tasks);
-    final habitsRate = getTodayHabitsCompletionRate(habits);
+    List<HabitModel> habits, {
+    DateTime? referenceDate,
+  }) {
+    final tasksRate = getTodayTasksCompletionRate(
+      tasks,
+      referenceDate: referenceDate,
+    );
+    final habitsRate = getTodayHabitsCompletionRate(
+      habits,
+      referenceDate: referenceDate,
+    );
 
     // وزن المهام 60% والعادات 40%
     final score = (tasksRate * 0.6 + habitsRate * 0.4) * 100;
@@ -222,19 +261,41 @@ class QuickStatsService {
   /// حساب إحصائيات سريعة شاملة
   static QuickStatsData calculateQuickStats(
     List<TaskModel> tasks,
-    List<HabitModel> habits,
-  ) {
+    List<HabitModel> habits, {
+    DateTime? referenceDate,
+  }) {
+    final DateTime calcDate = referenceDate ?? DateTime.now();
     return QuickStatsData(
-      todayCompletedTasks: getTodayCompletedTasks(tasks),
-      todayTotalTasks: getTodayTotalTasks(tasks),
-      todayTasksRate: getTodayTasksCompletionRate(tasks),
-      todayCompletedHabits: getTodayCompletedHabits(habits),
-      todayTotalHabits: habits.length,
-      todayHabitsRate: getTodayHabitsCompletionRate(habits),
-      currentLongestStreak: getCurrentLongestStreak(habits),
-      productivityScore: calculateQuickProductivityScore(tasks, habits),
-      habitsWithStreaks: getHabitsWithStreaks(habits),
-      calculatedAt: DateTime.now(),
+      todayCompletedTasks: getTodayCompletedTasks(
+        tasks,
+        referenceDate: calcDate,
+      ),
+      todayTotalTasks: getTodayTotalTasks(tasks, referenceDate: calcDate),
+      todayTasksRate: getTodayTasksCompletionRate(
+        tasks,
+        referenceDate: calcDate,
+      ),
+      todayCompletedHabits: getTodayCompletedHabits(
+        habits,
+        referenceDate: calcDate,
+      ),
+      todayTotalHabits: habits.length, // Total habits doesn't change with date
+      todayHabitsRate: getTodayHabitsCompletionRate(
+        habits,
+        referenceDate: calcDate,
+      ),
+      currentLongestStreak: getCurrentLongestStreak(
+        habits,
+        referenceDate: calcDate,
+      ), // Streak up to calcDate
+      productivityScore: calculateQuickProductivityScore(
+        tasks,
+        habits,
+        referenceDate: calcDate,
+      ),
+      habitsWithStreaks: getHabitsWithStreaks(habits, referenceDate: calcDate),
+      calculatedAt:
+          calcDate, // Reflects the date for which stats were calculated
     );
   }
 }

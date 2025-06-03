@@ -46,6 +46,10 @@ class NavigationHelper {
     context.push(createHabit);
   }
 
+  static void goToGamification(BuildContext context) {
+    context.push('/gamification');
+  }
+
   // Task navigation
   static void goToTaskDetails(BuildContext context, TaskModel task) {
     context.push('/task-details/${task.id}', extra: task);

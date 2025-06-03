@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:task_day/core/extensions/widget_extensions.dart';
 import 'package:task_day/core/themes/app_theme.dart';
 import 'package:task_day/widgets/habit_card.dart';
+import 'package:task_day/widgets/gamification_summary_widget.dart';
 import 'package:task_day/controller/task_cubit/task_cubit.dart';
 import 'package:task_day/controller/habit_cubit/habit_cubit.dart';
 import 'package:task_day/controller/status_cubit/status_cubit.dart';
@@ -155,38 +156,80 @@ class _HomeScreenState extends State<HomeScreen>
                                     ),
                                   );
                                 },
-                                child: GestureDetector(
-                                  onTap:
-                                      () =>
-                                          NavigationHelper.goToStatus(context),
-                                  child: Container(
-                                    height: 48.h,
-                                    width: 48.w,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          colorScheme.secondary,
-                                          colorScheme.primary,
-                                        ],
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: colorScheme.primary
-                                              .withOpacity(0.3),
-                                          blurRadius: 10,
-                                          spreadRadius: 2,
+                                child: Row(
+                                  children: [
+                                    GestureDetector(
+                                      onTap:
+                                          () =>
+                                              NavigationHelper.goToGamification(
+                                                context,
+                                              ),
+                                      child: Container(
+                                        height: 48.h,
+                                        width: 48.w,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              Colors.purple,
+                                              Colors.amber,
+                                            ],
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.purple.withOpacity(
+                                                0.3,
+                                              ),
+                                              blurRadius: 10,
+                                              spreadRadius: 2,
+                                            ),
+                                          ],
                                         ),
-                                      ],
-                                    ),
-                                    child: Center(
-                                      child: Icon(
-                                        Icons.person,
-                                        color: Colors.white,
-                                        size: 24.sp,
+                                        child: Center(
+                                          child: Icon(
+                                            Icons.emoji_events,
+                                            color: Colors.white,
+                                            size: 24.sp,
+                                          ),
+                                        ),
                                       ),
                                     ),
-                                  ),
+                                    SizedBox(width: 12.w),
+                                    GestureDetector(
+                                      onTap:
+                                          () => NavigationHelper.goToStatus(
+                                            context,
+                                          ),
+                                      child: Container(
+                                        height: 48.h,
+                                        width: 48.w,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              colorScheme.secondary,
+                                              colorScheme.primary,
+                                            ],
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: colorScheme.primary
+                                                  .withOpacity(0.3),
+                                              blurRadius: 10,
+                                              spreadRadius: 2,
+                                            ),
+                                          ],
+                                        ),
+                                        child: Center(
+                                          child: Icon(
+                                            Icons.person,
+                                            color: Colors.white,
+                                            size: 24.sp,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
@@ -296,6 +339,26 @@ class _HomeScreenState extends State<HomeScreen>
                           }
                           return Container();
                         },
+                      ),
+                    ),
+
+                    // Gamification Summary
+                    SliverToBoxAdapter(
+                      child: AnimatedBuilder(
+                        animation: _animationController,
+                        builder: (context, child) {
+                          return Transform.translate(
+                            offset: Offset(
+                              0,
+                              (1 - _animationController.value) * 30,
+                            ),
+                            child: Opacity(
+                              opacity: _animationController.value,
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: const GamificationSummaryWidget(),
                       ),
                     ),
 

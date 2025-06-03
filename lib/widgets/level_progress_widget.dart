@@ -31,7 +31,7 @@ class LevelProgressWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'المستوى ${profile.currentLevel}',
+                'Level ${profile.currentLevel}',
                 style: GoogleFonts.cairo(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.bold,
@@ -39,7 +39,7 @@ class LevelProgressWidget extends StatelessWidget {
                 ),
               ),
               Text(
-                'المستوى ${profile.currentLevel + 1}',
+                'Level ${profile.currentLevel + 1}',
                 style: GoogleFonts.cairo(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w600,
@@ -82,14 +82,14 @@ class LevelProgressWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '${(profile.levelProgress * 100).toInt()}% مكتمل',
+                '${(profile.levelProgress * 100).toInt()}% Complete',
                 style: GoogleFonts.cairo(
                   fontSize: 12.sp,
                   color: Colors.white70,
                 ),
               ),
               Text(
-                '${profile.pointsToNextLevel} نقطة متبقية',
+                '${profile.pointsToNextLevel} Points Remaining',
                 style: GoogleFonts.cairo(
                   fontSize: 12.sp,
                   color: Colors.amber,

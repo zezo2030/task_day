@@ -161,7 +161,7 @@ class AchievementCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'التقدم: ${achievement.currentProgress}/${achievement.targetValue}',
+                        'Progress: ${achievement.currentProgress}/${achievement.targetValue}',
                         style: GoogleFonts.cairo(
                           fontSize: 10.sp,
                           color: Colors.white60,
@@ -201,13 +201,13 @@ class AchievementCard extends StatelessWidget {
   String _getRarityText() {
     switch (achievement.rarity) {
       case AchievementRarity.common:
-        return 'عادي';
+        return 'Common';
       case AchievementRarity.rare:
-        return 'نادر';
+        return 'Rare';
       case AchievementRarity.epic:
-        return 'ملحمي';
+        return 'Epic';
       case AchievementRarity.legendary:
-        return 'أسطوري';
+        return 'Legendary';
     }
   }
 }

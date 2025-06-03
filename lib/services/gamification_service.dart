@@ -397,8 +397,8 @@ class GamificationService {
       // Point-based achievements
       AchievementModel(
         id: 'first_100_points',
-        title: 'نقاطي الأولى',
-        description: 'احصل على 100 نقطة',
+        title: 'First Points',
+        description: 'Earn 100 points',
         icon: Icons.stars,
         color: Colors.amber,
         type: AchievementType.totalPoints,
@@ -408,8 +408,8 @@ class GamificationService {
       ),
       AchievementModel(
         id: 'point_collector',
-        title: 'جامع النقاط',
-        description: 'احصل على 500 نقطة',
+        title: 'Point Collector',
+        description: 'Earn 500 points',
         icon: Icons.star,
         color: Colors.blue,
         type: AchievementType.totalPoints,
@@ -419,8 +419,8 @@ class GamificationService {
       ),
       AchievementModel(
         id: 'point_master',
-        title: 'سيد النقاط',
-        description: 'احصل على 1000 نقطة',
+        title: 'Point Master',
+        description: 'Earn 1000 points',
         icon: Icons.military_tech,
         color: Colors.purple,
         type: AchievementType.totalPoints,
@@ -432,8 +432,8 @@ class GamificationService {
       // Streak achievements
       AchievementModel(
         id: 'week_warrior',
-        title: 'محارب الأسبوع',
-        description: 'استمر لمدة 7 أيام متتالية',
+        title: 'Week Warrior',
+        description: 'Maintain a 7-day streak',
         icon: Icons.local_fire_department,
         color: Colors.orange,
         type: AchievementType.streakDays,
@@ -443,8 +443,8 @@ class GamificationService {
       ),
       AchievementModel(
         id: 'month_champion',
-        title: 'بطل الشهر',
-        description: 'استمر لمدة 30 يوماً متتالية',
+        title: 'Month Champion',
+        description: 'Maintain a 30-day streak',
         icon: Icons.emoji_events,
         color: Colors.red,
         type: AchievementType.streakDays,
@@ -456,8 +456,8 @@ class GamificationService {
       // Dedication achievements
       AchievementModel(
         id: 'newcomer',
-        title: 'وافد جديد',
-        description: 'استخدم التطبيق لمدة 3 أيام',
+        title: 'Newcomer',
+        description: 'Use the app for 3 days',
         icon: Icons.waving_hand,
         color: Colors.green,
         type: AchievementType.dedication,
@@ -467,8 +467,8 @@ class GamificationService {
       ),
       AchievementModel(
         id: 'regular_user',
-        title: 'مستخدم منتظم',
-        description: 'استخدم التطبيق لمدة 14 يوماً',
+        title: 'Regular User',
+        description: 'Use the app for 14 days',
         icon: Icons.schedule,
         color: Colors.teal,
         type: AchievementType.dedication,
@@ -496,8 +496,8 @@ class GamificationService {
       // Theme rewards
       RewardModel(
         id: 'dark_theme',
-        title: 'المظهر الداكن',
-        description: 'افتح المظهر الداكن الأنيق',
+        title: 'Dark Theme',
+        description: 'Unlock the elegant dark theme',
         icon: Icons.dark_mode,
         color: Colors.indigo,
         type: RewardType.theme,
@@ -506,8 +506,8 @@ class GamificationService {
       ),
       RewardModel(
         id: 'gradient_theme',
-        title: 'مظهر متدرج',
-        description: 'افتح المظهر المتدرج الجميل',
+        title: 'Gradient Theme',
+        description: 'Unlock the beautiful gradient theme',
         icon: Icons.gradient,
         color: Colors.purple,
         type: RewardType.theme,
@@ -519,8 +519,8 @@ class GamificationService {
       // Avatar rewards
       RewardModel(
         id: 'gold_avatar',
-        title: 'صورة ذهبية',
-        description: 'إطار ذهبي لصورتك الشخصية',
+        title: 'Gold Avatar',
+        description: 'Golden frame for your profile picture',
         icon: Icons.account_circle,
         color: Colors.amber,
         type: RewardType.avatar,
@@ -532,8 +532,8 @@ class GamificationService {
       // Badge rewards
       RewardModel(
         id: 'motivation_master',
-        title: 'سيد التحفيز',
-        description: 'شارة خاصة للمتحفزين',
+        title: 'Motivation Master',
+        description: 'Special badge for motivated users',
         icon: Icons.psychology,
         color: Colors.green,
         type: RewardType.badge,
@@ -545,8 +545,8 @@ class GamificationService {
       // Feature rewards
       RewardModel(
         id: 'custom_colors',
-        title: 'ألوان مخصصة',
-        description: 'خصص ألوان العادات بحرية',
+        title: 'Custom Colors',
+        description: 'Customize habit colors freely',
         icon: Icons.palette,
         color: Colors.pink,
         type: RewardType.feature,
@@ -562,8 +562,8 @@ class GamificationService {
     // This would implement weekly challenges
     // For now, return a simple challenge
     return {
-      'title': 'تحدي الأسبوع',
-      'description': 'أكمل 5 عادات كل يوم لمدة أسبوع',
+      'title': 'Weekly Challenge',
+      'description': 'Complete 5 habits every day for a week',
       'progress': 0,
       'target': 35, // 5 habits * 7 days
       'reward': 150,

@@ -144,7 +144,7 @@ class RewardCard extends StatelessWidget {
                       ),
                       SizedBox(width: 4.w),
                       Text(
-                        'مستوى ${reward.requiredLevel}',
+                        'Level ${reward.requiredLevel}',
                         style: GoogleFonts.cairo(
                           fontSize: 10.sp,
                           fontWeight: FontWeight.bold,
@@ -217,12 +217,12 @@ class RewardCard extends StatelessWidget {
   }
 
   String _getButtonText() {
-    if (reward.isClaimed) return 'تم الاستلام ✓';
-    if (!canAfford) return 'نقاط غير كافية';
+    if (reward.isClaimed) return 'Claimed ✓';
+    if (!canAfford) return 'Not Enough Points';
     if (reward.requiredLevel != null && userLevel < reward.requiredLevel!) {
-      return 'مستوى غير كافٍ';
+      return 'Level Too Low';
     }
-    return 'استلام المكافأة';
+    return 'Claim Reward';
   }
 
   bool get canAfford => userPoints >= reward.costInPoints;
@@ -245,15 +245,15 @@ class RewardCard extends StatelessWidget {
   String _getRarityText() {
     switch (reward.rarity) {
       case RewardRarity.common:
-        return 'عادي';
+        return 'Common';
       case RewardRarity.uncommon:
-        return 'غير عادي';
+        return 'Uncommon';
       case RewardRarity.rare:
-        return 'نادر';
+        return 'Rare';
       case RewardRarity.epic:
-        return 'ملحمي';
+        return 'Epic';
       case RewardRarity.legendary:
-        return 'أسطوري';
+        return 'Legendary';
     }
   }
 }

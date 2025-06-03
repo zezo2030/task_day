@@ -50,6 +50,10 @@ class NavigationHelper {
     context.push('/gamification');
   }
 
+  static void goToEditProfile(BuildContext context) {
+    context.push('/edit-profile');
+  }
+
   // Task navigation
   static void goToTaskDetails(BuildContext context, TaskModel task) {
     context.push('/task-details/${task.id}', extra: task);

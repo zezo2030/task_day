@@ -99,7 +99,7 @@ class _GamificationSummaryWidgetState extends State<GamificationSummaryWidget> {
                   Row(
                     children: [
                       Text(
-                        'المستوى ${_userProfile!.currentLevel}',
+                        'Level ${_userProfile!.currentLevel}',
                         style: GoogleFonts.cairo(
                           fontSize: 16.sp,
                           fontWeight: FontWeight.bold,
@@ -131,7 +131,7 @@ class _GamificationSummaryWidgetState extends State<GamificationSummaryWidget> {
                   ),
                   SizedBox(height: 4.h),
                   Text(
-                    '${_userProfile!.totalPoints} نقطة • ${_userProfile!.currentStreak} يوم متتالي',
+                    '${_userProfile!.totalPoints} Points • ${_userProfile!.currentStreak} Days Streak',
                     style: GoogleFonts.cairo(
                       fontSize: 12.sp,
                       color: Colors.white70,

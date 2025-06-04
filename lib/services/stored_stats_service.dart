@@ -125,7 +125,7 @@ class StoredStatsService {
       final habitStreaks = _calculateDetailedHabitStreaks(habits, date);
 
       // حساب النقاط التفصيلية
-      final productivityScore = _calculateDetailedProductivityScore(
+      final productivityScore = calculateDetailedProductivityScore(
         tasks,
         habits,
         date,
@@ -214,7 +214,7 @@ class StoredStatsService {
   }
 
   /// حساب نقاط الإنتاجية التفصيلية
-  static double _calculateDetailedProductivityScore(
+  static double calculateDetailedProductivityScore(
     List<TaskModel> tasks,
     List<HabitModel> habits,
     DateTime date,

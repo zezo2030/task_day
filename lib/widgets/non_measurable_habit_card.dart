@@ -13,10 +13,21 @@ class NonMeasurableHabitCard extends StatelessWidget {
     required this.onToggle,
   });
 
+  // Check if habit is completed today based on completedDates
+  bool _isCompletedToday() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    return habit.completedDates.any((date) {
+      final habitDate = DateTime(date.year, date.month, date.day);
+      return habitDate.isAtSameMomentAs(today);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDone = habit.isDone ?? false;
+    final isDone = _isCompletedToday();
 
     return Container(
       margin: EdgeInsets.only(bottom: 16.h),

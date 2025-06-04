@@ -96,8 +96,16 @@ class _HabitsScreenState extends State<HabitsScreen>
     if (habitIndex != -1) {
       final habit = _allHabits[habitIndex];
 
-      // If habit is already marked as done, reset it
-      if (habit.isDone == true) {
+      // Check if habit is completed today based on completedDates
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final isCompletedToday = habit.completedDates.any((date) {
+        final habitDate = DateTime(date.year, date.month, date.day);
+        return habitDate.isAtSameMomentAs(today);
+      });
+
+      // If habit is already completed today, reset it
+      if (isCompletedToday) {
         context.read<HabitCubit>().resetHabit(habit);
       } else {
         // Otherwise, mark it as completed

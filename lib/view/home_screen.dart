@@ -323,7 +323,7 @@ class _HomeScreenState extends State<HomeScreen>
                                       ),
                                       child: Center(
                                         child: Text(
-                                          "${(state.statusData.currentProductivityScore * 100).toInt()}%",
+                                          "${state.statusData.currentProductivityScore.toInt()}%",
                                           style: GoogleFonts.poppins(
                                             fontSize: 16.sp,
                                             fontWeight: FontWeight.bold,
@@ -363,78 +363,78 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
 
                     // Magical Quote
-                    SliverToBoxAdapter(
-                      child: AnimatedBuilder(
-                        animation: _animationController,
-                        builder: (context, child) {
-                          return Transform.translate(
-                            offset: Offset(
-                              0,
-                              (1 - _animationController.value) * 30,
-                            ),
-                            child: Opacity(
-                              opacity: _animationController.value,
-                              child: child,
-                            ),
-                          );
-                        },
-                        child: Container(
-                          margin: EdgeInsets.symmetric(
-                            horizontal: 20.w,
-                            vertical: 16.h,
-                          ),
-                          padding: EdgeInsets.all(20.w),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                colorScheme.primary.withOpacity(0.7),
-                                colorScheme.surface.withOpacity(0.7),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(20.r),
-                            boxShadow: [
-                              BoxShadow(
-                                color: colorScheme.primary.withOpacity(0.2),
-                                blurRadius: 15,
-                                spreadRadius: 5,
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.auto_awesome,
-                                    color: Colors.amber,
-                                    size: 22.sp,
-                                  ),
-                                  SizedBox(width: 8.w),
-                                  Text(
-                                    "Magical Thought",
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 16.sp,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 10.h),
-                              Text(
-                                _getTimeBasedQuote(),
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14.sp,
-                                  color: Colors.white,
-                                  height: 1.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
+                    // SliverToBoxAdapter(
+                    //   child: AnimatedBuilder(
+                    //     animation: _animationController,
+                    //     builder: (context, child) {
+                    //       return Transform.translate(
+                    //         offset: Offset(
+                    //           0,
+                    //           (1 - _animationController.value) * 30,
+                    //         ),
+                    //         child: Opacity(
+                    //           opacity: _animationController.value,
+                    //           child: child,
+                    //         ),
+                    //       );
+                    //     },
+                    //     child: Container(
+                    //       margin: EdgeInsets.symmetric(
+                    //         horizontal: 20.w,
+                    //         vertical: 16.h,
+                    //       ),
+                    //       padding: EdgeInsets.all(20.w),
+                    //       decoration: BoxDecoration(
+                    //         gradient: LinearGradient(
+                    //           colors: [
+                    //             colorScheme.primary.withOpacity(0.7),
+                    //             colorScheme.surface.withOpacity(0.7),
+                    //           ],
+                    //         ),
+                    //         borderRadius: BorderRadius.circular(20.r),
+                    //         boxShadow: [
+                    //           BoxShadow(
+                    //             color: colorScheme.primary.withOpacity(0.2),
+                    //             blurRadius: 15,
+                    //             spreadRadius: 5,
+                    //           ),
+                    //         ],
+                    //       ),
+                    //       child: Column(
+                    //         crossAxisAlignment: CrossAxisAlignment.start,
+                    //         children: [
+                    //           Row(
+                    //             children: [
+                    //               Icon(
+                    //                 Icons.auto_awesome,
+                    //                 color: Colors.amber,
+                    //                 size: 22.sp,
+                    //               ),
+                    //               SizedBox(width: 8.w),
+                    //               Text(
+                    //                 "Magical Thought",
+                    //                 style: GoogleFonts.poppins(
+                    //                   fontSize: 16.sp,
+                    //                   fontWeight: FontWeight.bold,
+                    //                   color: Colors.white,
+                    //                 ),
+                    //               ),
+                    //             ],
+                    //           ),
+                    //           SizedBox(height: 10.h),
+                    //           Text(
+                    //             _getTimeBasedQuote(),
+                    //             style: GoogleFonts.poppins(
+                    //               fontSize: 14.sp,
+                    //               color: Colors.white,
+                    //               height: 1.5,
+                    //             ),
+                    //           ),
+                    //         ],
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ),
 
                     // Today's Tasks Headerhk
                     SliverToBoxAdapter(

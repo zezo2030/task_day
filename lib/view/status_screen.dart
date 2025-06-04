@@ -394,7 +394,7 @@ class _StatusScreenState extends State<StatusScreen>
         subtitle:
             habit.isCompletedToday
                 ? Text(
-                  '✓ مكتملة اليوم',
+                  '✓ Completed today',
                   style: TextStyle(color: Colors.green, fontSize: 12.sp),
                 )
                 : null,

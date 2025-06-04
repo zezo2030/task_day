@@ -765,59 +765,63 @@ class _HomeScreenState extends State<HomeScreen>
                       },
                     ),
 
-                    // View All Tasks Link
-                    BlocBuilder<TaskCubit, TaskState>(
-                      builder: (context, state) {
-                        if (state is TaskLoaded && state.tasks.isNotEmpty) {
-                          return SliverToBoxAdapter(
-                            child: AnimatedBuilder(
-                              animation: _animationController,
-                              builder: (context, child) {
-                                return Transform.translate(
-                                  offset: Offset(
-                                    (1 - _animationController.value) * 20,
-                                    0,
-                                  ),
-                                  child: Opacity(
-                                    opacity: _animationController.value,
-                                    child: child,
-                                  ),
-                                );
-                              },
-                              child: GestureDetector(
-                                onTap: () => context.go('/tasks'),
-                                child: Container(
-                                  margin: EdgeInsets.symmetric(
-                                    horizontal: 20.w,
-                                  ),
-                                  padding: EdgeInsets.symmetric(vertical: 12.h),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        "View All Tasks",
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 14.sp,
-                                          color: colorScheme.primary,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                      SizedBox(width: 8.w),
-                                      Icon(
-                                        Icons.arrow_forward_ios,
-                                        size: 14.sp,
-                                        color: colorScheme.primary,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        }
-                        return SliverToBoxAdapter(child: Container());
-                      },
-                    ),
+                    // // View All Tasks Link
+                    // BlocBuilder<TaskCubit, TaskState>(
+                    //   builder: (context, state) {
+                    //     if (state is TaskLoaded && state.tasks.isNotEmpty) {
+                    //       return SliverToBoxAdapter(
+                    //         child: AnimatedBuilder(
+                    //           animation: _animationController,
+                    //           builder: (context, child) {
+                    //             return Transform.translate(
+                    //               offset: Offset(
+                    //                 (1 - _animationController.value) * 20,
+                    //                 0,
+                    //               ),
+                    //               child: Opacity(
+                    //                 opacity: _animationController.value,
+                    //                 child: child,
+                    //               ),
+                    //             );
+                    //           },
+                    //           child: GestureDetector(
+                    //             onTap:
+                    //                 () => NavigationHelper.goToHomeWithTab(
+                    //                   context,
+                    //                   2,
+                    //                 ),
+                    //             child: Container(
+                    //               margin: EdgeInsets.symmetric(
+                    //                 horizontal: 20.w,
+                    //               ),
+                    //               padding: EdgeInsets.symmetric(vertical: 12.h),
+                    //               child: Row(
+                    //                 mainAxisAlignment: MainAxisAlignment.center,
+                    //                 children: [
+                    //                   Text(
+                    //                     "View All Tasks",
+                    //                     style: GoogleFonts.poppins(
+                    //                       fontSize: 14.sp,
+                    //                       color: colorScheme.primary,
+                    //                       fontWeight: FontWeight.w500,
+                    //                     ),
+                    //                   ),
+                    //                   SizedBox(width: 8.w),
+                    //                   Icon(
+                    //                     Icons.arrow_forward_ios,
+                    //                     size: 14.sp,
+                    //                     color: colorScheme.primary,
+                    //                   ),
+                    //                 ],
+                    //               ),
+                    //             ),
+                    //           ),
+                    //         ),
+                    //       );
+                    //     }
+                    //     return SliverToBoxAdapter(child: Container());
+                    //   },
+                    // ),
 
                     // Habits Header
                     SliverToBoxAdapter(

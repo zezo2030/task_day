@@ -11,7 +11,6 @@ import '../widgets/achievement_card.dart';
 import '../widgets/reward_card.dart';
 import '../widgets/level_progress_widget.dart';
 import '../core/themes/app_theme.dart';
-import '../core/router/navigation_helper.dart';
 import 'edit_profile_screen.dart';
 
 class GamificationScreen extends StatefulWidget {

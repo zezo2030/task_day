@@ -360,8 +360,9 @@ class GamificationService {
 
     // Check level requirement
     if (reward.requiredLevel != null &&
-        profile.currentLevel < reward.requiredLevel!)
+        profile.currentLevel < reward.requiredLevel!) {
       return false;
+    }
 
     // Claim the reward
     final updatedReward = reward.copyWith(

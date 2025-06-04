@@ -30,6 +30,11 @@ class NavigationHelper {
     context.go(tasks);
   }
 
+  // Navigate to tasks tab in main screen (with bottom navigation)
+  static void goToTasksTab(BuildContext context) {
+    context.go('/?tab=2');
+  }
+
   static void goToHabits(BuildContext context) {
     context.go(habits);
   }

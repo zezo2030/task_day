@@ -2,6 +2,21 @@
 
 A beautiful and feature-rich task management application built with Flutter, designed to help you organize your tasks efficiently with a modern and intuitive interface.
 
+## Screenshots
+
+### Main Features
+![Task List Screen](assets/images/task_list.png)
+*Main task list with priority indicators and task cards*
+
+![Task Details](assets/images/task_details.png)
+*Detailed task view with subtasks and progress tracking*
+
+![Create Task](assets/images/create_task.png)
+*Create new task interface with priority selection*
+
+![Subtask Management](assets/images/subtasks.png)
+*Subtask management with progress tracking*
+
 ## Features
 
 ### Task Management

@@ -244,18 +244,30 @@ class QuickStatsService {
     List<HabitModel> habits, {
     DateTime? referenceDate,
   }) {
-    final tasksRate = getTodayTasksCompletionRate(
+    // Calculate total tasks for today
+    final totalTasks = getTodayTotalTasks(tasks, referenceDate: referenceDate);
+    final totalHabits = habits.length;
+    final totalTasksAndHabits = totalTasks + totalHabits;
+    final completedTasks = getTodayCompletedTasks(
       tasks,
       referenceDate: referenceDate,
     );
-    final habitsRate = getTodayHabitsCompletionRate(
+    final completedHabits = getTodayCompletedHabits(
       habits,
       referenceDate: referenceDate,
     );
+    final completedTasksAndHabits = completedTasks + completedHabits;
+    // Calculate completion rate
+    final completionRate =
+        totalTasksAndHabits > 0
+            ? completedTasksAndHabits / totalTasksAndHabits
+            : 0.0;
 
-    // وزن المهام 60% والعادات 40%
-    final score = (tasksRate * 0.6 + habitsRate * 0.4) * 100;
-    return score.clamp(0.0, 100.0);
+    // Return completion rate as a percentage
+    return completionRate * 100;
+
+    // final score = ((tasksRate + habitsRate) / 2) * 100;
+    // return score.clamp(0.0, 100.0);
   }
 
   /// حساب إحصائيات سريعة شاملة

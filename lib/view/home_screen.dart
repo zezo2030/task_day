@@ -56,6 +56,30 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
+  // Get greeting based on time of day
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) {
+      return "Good Morning";
+    } else if (hour < 17) {
+      return "Good Afternoon";
+    } else {
+      return "Good Evening";
+    }
+  }
+
+  // Get greeting icon based on time of day
+  IconData _getGreetingIcon() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) {
+      return Icons.wb_sunny_outlined;
+    } else if (hour < 17) {
+      return Icons.wb_sunny;
+    } else {
+      return Icons.nights_stay_outlined;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final String formattedDate = DateFormat(
@@ -81,159 +105,183 @@ class _HomeScreenState extends State<HomeScreen>
                 child: CustomScrollView(
                   physics: const BouncingScrollPhysics(),
                   slivers: [
-                    // App Bar with date and profile
-                    SliverAppBar(
-                      expandedHeight: 120.h,
-                      floating: true,
-                      pinned: false,
-                      backgroundColor: Colors.transparent,
-                      elevation: 0,
-                      flexibleSpace: FlexibleSpaceBar(
-                        background: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 20.w),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              AnimatedBuilder(
-                                animation: _animationController,
-                                builder: (context, child) {
-                                  return Transform.translate(
-                                    offset: Offset(
-                                      (1 - _animationController.value) * -30,
-                                      0,
-                                    ),
-                                    child: Opacity(
-                                      opacity: _animationController.value,
-                                      child: child,
-                                    ),
-                                  );
-                                },
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      "Welcome Zoz",
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 32.sp,
-                                        fontWeight: FontWeight.bold,
-                                        foreground:
-                                            Paint()
-                                              ..shader = LinearGradient(
-                                                colors: [
-                                                  Colors.white,
-                                                  colorScheme.secondary,
-                                                ],
-                                              ).createShader(
-                                                Rect.fromLTWH(
-                                                  0,
-                                                  0,
-                                                  200.w,
-                                                  70.h,
-                                                ),
-                                              ),
-                                      ),
-                                    ),
-                                    SizedBox(height: 4.h),
-                                    Text(
-                                      formattedDate,
-                                      style: theme.textTheme.bodySmall,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              AnimatedBuilder(
-                                animation: _animationController,
-                                builder: (context, child) {
-                                  return Transform.translate(
-                                    offset: Offset(
-                                      (1 - _animationController.value) * 30,
-                                      0,
-                                    ),
-                                    child: Opacity(
-                                      opacity: _animationController.value,
-                                      child: child,
-                                    ),
-                                  );
-                                },
-                                child: Row(
-                                  children: [
-                                    GestureDetector(
-                                      onTap:
-                                          () =>
-                                              NavigationHelper.goToGamification(
-                                                context,
-                                              ),
-                                      child: Container(
-                                        height: 48.h,
-                                        width: 48.w,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              Colors.purple,
-                                              Colors.amber,
-                                            ],
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.purple.withOpacity(
-                                                0.3,
-                                              ),
-                                              blurRadius: 10,
-                                              spreadRadius: 2,
-                                            ),
-                                          ],
-                                        ),
-                                        child: Center(
-                                          child: Icon(
-                                            Icons.emoji_events,
-                                            color: Colors.white,
-                                            size: 24.sp,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(width: 12.w),
-                                    GestureDetector(
-                                      onTap:
-                                          () => NavigationHelper.goToStatus(
-                                            context,
-                                          ),
-                                      child: Container(
-                                        height: 48.h,
-                                        width: 48.w,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              colorScheme.secondary,
-                                              colorScheme.primary,
-                                            ],
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: colorScheme.primary
-                                                  .withOpacity(0.3),
-                                              blurRadius: 10,
-                                              spreadRadius: 2,
-                                            ),
-                                          ],
-                                        ),
-                                        child: Center(
-                                          child: Icon(
-                                            Icons.person,
-                                            color: Colors.white,
-                                            size: 24.sp,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                    // Enhanced Header Section
+                    SliverToBoxAdapter(
+                      child: Container(
+                        padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 30.h),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              colorScheme.surface,
+                              colorScheme.surface.withOpacity(0.8),
                             ],
                           ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Top Row with Actions
+                            AnimatedBuilder(
+                              animation: _animationController,
+                              builder: (context, child) {
+                                return Transform.translate(
+                                  offset: Offset(
+                                    0,
+                                    (1 - _animationController.value) * -20,
+                                  ),
+                                  child: Opacity(
+                                    opacity: _animationController.value,
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  _HeaderActionButton(
+                                    icon: Icons.emoji_events_outlined,
+                                    onTap:
+                                        () => NavigationHelper.goToGamification(
+                                          context,
+                                        ),
+                                    gradient: [Colors.purple, Colors.amber],
+                                    delay: 0.1,
+                                    animationController: _animationController,
+                                  ),
+                                  SizedBox(width: 12.w),
+                                  _HeaderActionButton(
+                                    icon: Icons.person_outline,
+                                    onTap:
+                                        () => NavigationHelper.goToStatus(
+                                          context,
+                                        ),
+                                    gradient: [
+                                      colorScheme.secondary,
+                                      colorScheme.primary,
+                                    ],
+                                    delay: 0.2,
+                                    animationController: _animationController,
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            SizedBox(height: 20.h),
+
+                            // Welcome Section
+                            AnimatedBuilder(
+                              animation: _animationController,
+                              builder: (context, child) {
+                                return Transform.translate(
+                                  offset: Offset(
+                                    (1 - _animationController.value) * -50,
+                                    0,
+                                  ),
+                                  child: Opacity(
+                                    opacity: _animationController.value,
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Greeting with Icon
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: EdgeInsets.all(8.w),
+                                        decoration: BoxDecoration(
+                                          color: colorScheme.primary
+                                              .withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(
+                                            12.r,
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          _getGreetingIcon(),
+                                          color: colorScheme.primary,
+                                          size: 20.sp,
+                                        ),
+                                      ),
+                                      SizedBox(width: 12.w),
+                                      Text(
+                                        _getGreeting(),
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 16.sp,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.white70,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+
+                                  SizedBox(height: 12.h),
+
+                                  // Main Welcome Text
+                                  ShaderMask(
+                                    shaderCallback:
+                                        (bounds) => LinearGradient(
+                                          colors: [
+                                            Colors.white,
+                                            colorScheme.secondary,
+                                            colorScheme.primary,
+                                          ],
+                                          stops: [0.0, 0.5, 1.0],
+                                        ).createShader(bounds),
+                                    child: Text(
+                                      "Welcome Back, Zoz!",
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 28.sp,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                        height: 1.2,
+                                      ),
+                                    ),
+                                  ),
+
+                                  SizedBox(height: 8.h),
+
+                                  // Date with better styling
+                                  Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 12.w,
+                                      vertical: 6.h,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(20.r),
+                                      border: Border.all(
+                                        color: Colors.white.withOpacity(0.2),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.calendar_today_outlined,
+                                          color: colorScheme.secondary,
+                                          size: 14.sp,
+                                        ),
+                                        SizedBox(width: 6.w),
+                                        Text(
+                                          formattedDate,
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 12.sp,
+                                            color: Colors.white70,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -1075,6 +1123,70 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+// Custom Header Action Button Widget
+class _HeaderActionButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final List<Color> gradient;
+  final double delay;
+  final AnimationController animationController;
+
+  const _HeaderActionButton({
+    required this.icon,
+    required this.onTap,
+    required this.gradient,
+    required this.delay,
+    required this.animationController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final itemAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: animationController,
+        curve: Interval(delay, delay + 0.3, curve: Curves.elasticOut),
+      ),
+    );
+
+    return AnimatedBuilder(
+      animation: itemAnimation,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: itemAnimation.value,
+          child: Transform.rotate(
+            angle: (1 - itemAnimation.value) * 0.5,
+            child: child,
+          ),
+        );
+      },
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: 44.h,
+          width: 44.w,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              colors: gradient,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: gradient.first.withOpacity(0.3),
+                blurRadius: 12,
+                spreadRadius: 2,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Icon(icon, color: Colors.white, size: 20.sp),
+        ),
       ),
     );
   }

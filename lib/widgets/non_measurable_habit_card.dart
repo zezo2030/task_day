@@ -93,24 +93,58 @@ class NonMeasurableHabitCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                Theme(
-                  data: ThemeData(
-                    checkboxTheme: CheckboxThemeData(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6.r),
+                GestureDetector(
+                  onTap: onToggle,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOutBack,
+                    height: 40.h,
+                    width: 40.w,
+                    decoration: BoxDecoration(
+                      gradient:
+                          isDone
+                              ? LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  habit.color,
+                                  habit.color.withOpacity(0.7),
+                                ],
+                              )
+                              : LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  habit.color.withOpacity(0.1),
+                                  habit.color.withOpacity(0.05),
+                                ],
+                              ),
+                      borderRadius: BorderRadius.circular(14.r),
+                      border: Border.all(
+                        color:
+                            isDone ? habit.color : habit.color.withOpacity(0.6),
+                        width: 2,
                       ),
-                      side: BorderSide(color: habit.color, width: 2),
-                      fillColor: WidgetStateProperty.resolveWith<Color>((
-                        Set<WidgetState> states,
-                      ) {
-                        if (states.contains(WidgetState.selected)) {
-                          return habit.color;
-                        }
-                        return Colors.transparent;
-                      }),
+                      boxShadow: [
+                        BoxShadow(
+                          color: habit.color.withOpacity(isDone ? 0.4 : 0.2),
+                          blurRadius: isDone ? 12 : 8,
+                          spreadRadius: isDone ? 2 : 1,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: AnimatedScale(
+                      scale: isDone ? 1.0 : 0.7,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.elasticOut,
+                      child: Icon(
+                        isDone ? Icons.check_rounded : Icons.add_rounded,
+                        color: isDone ? Colors.white : habit.color,
+                        size: 22.sp,
+                      ),
                     ),
                   ),
-                  child: Checkbox(value: isDone, onChanged: (_) => onToggle()),
                 ),
               ],
             ),

@@ -200,8 +200,21 @@ class _HabitDetailsScreenState extends State<HabitDetailsScreen>
                             size: 18.sp,
                           ),
                         ),
-                        onPressed: () {
-                          // Navigate to edit screen (not implemented yet)
+                        onPressed: () async {
+                          // Navigate to edit habit screen
+                          final result = await context.push(
+                            '/edit-habit/${_habit.id}',
+                            extra: _habit,
+                          );
+
+                          // If habit was updated, refresh the current habit data
+                          if (result is HabitModel) {
+                            setState(() {
+                              _habit = result;
+                            });
+                            // Also refresh the habits list
+                            context.read<HabitCubit>().getHabits();
+                          }
                         },
                       ),
                       IconButton(

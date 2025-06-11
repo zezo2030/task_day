@@ -194,75 +194,68 @@ class _StatusScreenState extends State<StatusScreen>
   }
 
   Widget _buildLoadedState(StatusData statusData, ColorScheme colorScheme) {
-    return RefreshIndicator(
-      onRefresh: () async {
-        context.read<StatusCubit>().loadStatusData();
-      },
-      backgroundColor: const Color(0xFF191B2F),
-      color: colorScheme.primary,
-      child: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          // Header Section
+    return CustomScrollView(
+      physics: const BouncingScrollPhysics(),
+      slivers: [
+        // Header Section
+        SliverToBoxAdapter(
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: Transform.translate(
+              offset: Offset(0, _slideAnimation.value),
+              child: _buildHeader(statusData, colorScheme),
+            ),
+          ),
+        ),
+
+        // Today's Overview Cards
+        SliverToBoxAdapter(
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: Transform.translate(
+              offset: Offset(0, _slideAnimation.value * 1.5),
+              child: _buildTodayOverview(statusData, colorScheme),
+            ),
+          ),
+        ),
+
+        // Progress Charts Section
+        SliverToBoxAdapter(
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: Transform.translate(
+              offset: Offset(0, _slideAnimation.value * 2),
+              child: _buildProgressSection(statusData, colorScheme),
+            ),
+          ),
+        ),
+
+        // Weekly Summary
+        SliverToBoxAdapter(
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: Transform.translate(
+              offset: Offset(0, _slideAnimation.value * 2.5),
+              child: _buildWeeklySummary(statusData, colorScheme),
+            ),
+          ),
+        ),
+        SliverToBoxAdapter(child: SizedBox(height: 20.h)),
+        // Habits with Streaks
+        if (statusData.habitsWithStreaks.isNotEmpty)
           SliverToBoxAdapter(
             child: FadeTransition(
               opacity: _fadeAnimation,
               child: Transform.translate(
-                offset: Offset(0, _slideAnimation.value),
-                child: _buildHeader(statusData, colorScheme),
+                offset: Offset(0, _slideAnimation.value * 3),
+                child: _buildHabitsStreakSection(statusData, colorScheme),
               ),
             ),
           ),
 
-          // Today's Overview Cards
-          SliverToBoxAdapter(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Transform.translate(
-                offset: Offset(0, _slideAnimation.value * 1.5),
-                child: _buildTodayOverview(statusData, colorScheme),
-              ),
-            ),
-          ),
-
-          // Progress Charts Section
-          SliverToBoxAdapter(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Transform.translate(
-                offset: Offset(0, _slideAnimation.value * 2),
-                child: _buildProgressSection(statusData, colorScheme),
-              ),
-            ),
-          ),
-
-          // Weekly Summary
-          SliverToBoxAdapter(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Transform.translate(
-                offset: Offset(0, _slideAnimation.value * 2.5),
-                child: _buildWeeklySummary(statusData, colorScheme),
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(child: SizedBox(height: 20.h)),
-          // Habits with Streaks
-          if (statusData.habitsWithStreaks.isNotEmpty)
-            SliverToBoxAdapter(
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: Transform.translate(
-                  offset: Offset(0, _slideAnimation.value * 3),
-                  child: _buildHabitsStreakSection(statusData, colorScheme),
-                ),
-              ),
-            ),
-
-          // Bottom padding
-          SliverToBoxAdapter(child: SizedBox(height: 20.h)),
-        ],
-      ),
+        // Bottom padding
+        SliverToBoxAdapter(child: SizedBox(height: 40.h)),
+      ],
     );
   }
 

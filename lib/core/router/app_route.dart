@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:task_day/view/create_habit_screen.dart';
 import 'package:task_day/view/create_task_screen.dart';
 import 'package:task_day/view/edit_task_screen.dart';
+import 'package:task_day/view/edit_habit_screen.dart';
 import 'package:task_day/view/habit_details_screen.dart';
 import 'package:task_day/view/habits_screen.dart';
 import 'package:task_day/view/home_screen.dart';
@@ -80,6 +81,35 @@ class AppRouter {
           } else {
             // Handle case when task is not found
             return _buildNotFoundPage(context, 'Task', '/tasks');
+          }
+        },
+      ),
+      GoRoute(
+        path: '/edit-habit/:habitId',
+        builder: (context, state) {
+          final habitId = state.pathParameters['habitId'] ?? '';
+
+          // Try to get habit from extra parameter first (for immediate navigation)
+          final extraHabit = state.extra as HabitModel?;
+          if (extraHabit != null && extraHabit.id == habitId) {
+            return BlocProvider(
+              create: (context) => HabitCubit(),
+              child: EditHabitScreen(habit: extraHabit),
+            );
+          }
+
+          // Fallback to Hive storage
+          final habitsBox = HiveService.getHabitsBox();
+          final habit = habitsBox.get(habitId);
+
+          if (habit != null) {
+            return BlocProvider(
+              create: (context) => HabitCubit(),
+              child: EditHabitScreen(habit: habit),
+            );
+          } else {
+            // Handle case when habit is not found
+            return _buildNotFoundPage(context, 'Habit', '/habits');
           }
         },
       ),

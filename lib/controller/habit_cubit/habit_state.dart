@@ -71,13 +71,3 @@ final class HabitCompleted extends HabitState {
   @override
   List<Object> get props => [habit];
 }
-
-final class HabitPointsEarned extends HabitState {
-  final HabitModel habit;
-  final int pointsEarned;
-
-  const HabitPointsEarned(this.habit, this.pointsEarned);
-
-  @override
-  List<Object> get props => [habit, pointsEarned];
-}

@@ -2,11 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:task_day/models/habit_model.dart';
 import 'package:task_day/models/task_model.dart';
-import 'package:task_day/models/user_profile_model.dart';
-import 'package:task_day/models/achievement_model.dart';
-import 'package:task_day/models/reward_model.dart';
 import 'package:task_day/services/stored_stats_service.dart';
-import 'package:task_day/services/gamification_service.dart';
 
 class HiveService {
   static const String habitsBoxName = 'habits';
@@ -23,15 +19,6 @@ class HiveService {
     Hive.registerAdapter(TaskModelAdapter());
     Hive.registerAdapter(SubTaskModelAdapter());
 
-    // Register gamification adapters
-    Hive.registerAdapter(UserProfileModelAdapter());
-    Hive.registerAdapter(AchievementModelAdapter());
-    Hive.registerAdapter(RewardModelAdapter());
-    Hive.registerAdapter(AchievementTypeAdapter());
-    Hive.registerAdapter(AchievementRarityAdapter());
-    Hive.registerAdapter(RewardTypeAdapter());
-    Hive.registerAdapter(RewardRarityAdapter());
-
     // Open boxes
     await Hive.openBox<HabitModel>(habitsBoxName);
     await Hive.openBox<TaskModel>(tasksBoxName);
@@ -39,9 +26,6 @@ class HiveService {
 
     // Initialize stored stats service
     await StoredStatsService.init();
-
-    // Initialize gamification system
-    await GamificationService.init();
 
     // Check and perform daily reset if needed
     await checkAndPerformDailyReset();
@@ -137,19 +121,6 @@ class HiveService {
 
       // Save the updated habit
       await box.put(id, updatedHabit);
-
-      // Trigger gamification system for habit completion
-      final pointsEarned = await GamificationService.onHabitCompleted(
-        updatedHabit,
-      );
-
-      // Store points earned for UI display (we'll access this elsewhere)
-      // This is a simple approach - you could also use a callback or stream
-      await _storeEarnedPoints(
-        updatedHabit.id,
-        pointsEarned,
-        updatedHabit.title,
-      );
     }
   }
 
@@ -184,20 +155,6 @@ class HiveService {
       }
 
       await box.put(id, updatedHabit);
-
-      // Handle gamification: subtract points if they were earned today
-      final pointsSubtracted = await GamificationService.onHabitReset(
-        updatedHabit,
-      );
-
-      // Store points subtracted for UI display (negative value)
-      if (pointsSubtracted > 0) {
-        await _storeEarnedPoints(
-          updatedHabit.id,
-          -pointsSubtracted, // Negative to indicate subtraction
-          updatedHabit.title,
-        );
-      }
     }
   }
 
@@ -482,55 +439,6 @@ class HiveService {
       }
     }
     return null;
-  }
-
-  /// Store earned points for UI display
-  static Future<void> _storeEarnedPoints(
-    String habitId,
-    int points,
-    String habitTitle,
-  ) async {
-    try {
-      final box = getSettingsBox();
-      await box.put('lastEarnedPoints', {
-        'habitId': habitId,
-        'points': points,
-        'habitTitle': habitTitle,
-        'timestamp': DateTime.now().millisecondsSinceEpoch,
-      });
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error storing earned points: $e');
-      }
-    }
-  }
-
-  /// Get last earned points
-  static Map<String, dynamic>? getLastEarnedPoints() {
-    try {
-      final box = getSettingsBox();
-      final data = box.get('lastEarnedPoints');
-      if (data is Map) {
-        return Map<String, dynamic>.from(data);
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error getting last earned points: $e');
-      }
-    }
-    return null;
-  }
-
-  /// Clear earned points (after showing dialog)
-  static Future<void> clearEarnedPoints() async {
-    try {
-      final box = getSettingsBox();
-      await box.delete('lastEarnedPoints');
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error clearing earned points: $e');
-      }
-    }
   }
 
   /// Close Hive

@@ -41,9 +41,17 @@ class StatusData extends Equatable {
   final int currentLongestStreak;
   final double currentProductivityScore;
 
+  // البيانات المدمجة (مهام + عادات)
+  final int todayTotalItems; // إجمالي المهام والعادات
+  final int todayCompletedItems; // المهام والعادات المكتملة
+  final double todayCombinedCompletionRate; // معدل الإنجاز المدمج
+
   // البيانات المخزنة (فترات أطول)
   final double weeklyProgress;
   final double monthlyProgress;
+
+  // بيانات الأسبوع المدمجة
+  final List<double> weeklyCompletionRates; // معدلات الإنجاز اليومية للأسبوع
 
   // بيانات تفصيلية
   final List<HabitStreakInfo> habitsWithStreaks;
@@ -61,8 +69,12 @@ class StatusData extends Equatable {
     required this.todayHabitsCompletionRate,
     required this.currentLongestStreak,
     required this.currentProductivityScore,
+    required this.todayTotalItems,
+    required this.todayCompletedItems,
+    required this.todayCombinedCompletionRate,
     required this.weeklyProgress,
     required this.monthlyProgress,
+    required this.weeklyCompletionRates,
     required this.habitsWithStreaks,
     required this.lastCalculatedAt,
     required this.dataSource,
@@ -70,6 +82,11 @@ class StatusData extends Equatable {
 
   /// إنشاء StatusData من DailyStatsModel (البيانات المخزنة)
   factory StatusData.fromDailyStats(DailyStatsModel dailyStats) {
+    final totalItems = dailyStats.totalTasks + dailyStats.totalHabits;
+    final completedItems =
+        dailyStats.completedTasks + dailyStats.completedHabits;
+    final combinedRate = totalItems > 0 ? (completedItems / totalItems) : 0.0;
+
     return StatusData(
       todayCompletedTasks: dailyStats.completedTasks,
       todayTotalTasks: dailyStats.totalTasks,
@@ -79,8 +96,12 @@ class StatusData extends Equatable {
       todayHabitsCompletionRate: dailyStats.habitsCompletionRate,
       currentLongestStreak: dailyStats.longestStreak,
       currentProductivityScore: dailyStats.productivityScore,
+      todayTotalItems: totalItems,
+      todayCompletedItems: completedItems,
+      todayCombinedCompletionRate: combinedRate,
       weeklyProgress: 0.0, // يجب حسابها منفصلة
       monthlyProgress: 0.0, // يجب حسابها منفصلة
+      weeklyCompletionRates: [], // يجب حسابها منفصلة
       habitsWithStreaks: [], // يجب حسابها منفصلة
       lastCalculatedAt: dailyStats.updatedAt,
       dataSource: 'stored',
@@ -96,8 +117,12 @@ class StatusData extends Equatable {
     double? todayHabitsCompletionRate,
     int? currentLongestStreak,
     double? currentProductivityScore,
+    int? todayTotalItems,
+    int? todayCompletedItems,
+    double? todayCombinedCompletionRate,
     double? weeklyProgress,
     double? monthlyProgress,
+    List<double>? weeklyCompletionRates,
     List<HabitStreakInfo>? habitsWithStreaks,
     DateTime? lastCalculatedAt,
     String? dataSource,
@@ -113,8 +138,13 @@ class StatusData extends Equatable {
     currentLongestStreak: currentLongestStreak ?? this.currentLongestStreak,
     currentProductivityScore:
         currentProductivityScore ?? this.currentProductivityScore,
+    todayTotalItems: todayTotalItems ?? this.todayTotalItems,
+    todayCompletedItems: todayCompletedItems ?? this.todayCompletedItems,
+    todayCombinedCompletionRate:
+        todayCombinedCompletionRate ?? this.todayCombinedCompletionRate,
     weeklyProgress: weeklyProgress ?? this.weeklyProgress,
     monthlyProgress: monthlyProgress ?? this.monthlyProgress,
+    weeklyCompletionRates: weeklyCompletionRates ?? this.weeklyCompletionRates,
     habitsWithStreaks: habitsWithStreaks ?? this.habitsWithStreaks,
     lastCalculatedAt: lastCalculatedAt ?? this.lastCalculatedAt,
     dataSource: dataSource ?? this.dataSource,
@@ -130,8 +160,12 @@ class StatusData extends Equatable {
     todayHabitsCompletionRate,
     currentLongestStreak,
     currentProductivityScore,
+    todayTotalItems,
+    todayCompletedItems,
+    todayCombinedCompletionRate,
     weeklyProgress,
     monthlyProgress,
+    weeklyCompletionRates,
     habitsWithStreaks,
     lastCalculatedAt,
     dataSource,

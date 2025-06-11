@@ -6,7 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:task_day/core/extensions/widget_extensions.dart';
 import 'package:task_day/core/themes/app_theme.dart';
 import 'package:task_day/widgets/habit_card.dart';
-import 'package:task_day/widgets/gamification_summary_widget.dart';
+
 import 'package:task_day/controller/task_cubit/task_cubit.dart';
 import 'package:task_day/controller/habit_cubit/habit_cubit.dart';
 import 'package:task_day/controller/status_cubit/status_cubit.dart';
@@ -122,52 +122,6 @@ class _HomeScreenState extends State<HomeScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Top Row with Actions
-                            AnimatedBuilder(
-                              animation: _animationController,
-                              builder: (context, child) {
-                                return Transform.translate(
-                                  offset: Offset(
-                                    0,
-                                    (1 - _animationController.value) * -20,
-                                  ),
-                                  child: Opacity(
-                                    opacity: _animationController.value,
-                                    child: child,
-                                  ),
-                                );
-                              },
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  _HeaderActionButton(
-                                    icon: Icons.emoji_events_outlined,
-                                    onTap:
-                                        () => NavigationHelper.goToGamification(
-                                          context,
-                                        ),
-                                    gradient: [Colors.purple, Colors.amber],
-                                    delay: 0.1,
-                                    animationController: _animationController,
-                                  ),
-                                  SizedBox(width: 12.w),
-                                  _HeaderActionButton(
-                                    icon: Icons.person_outline,
-                                    onTap:
-                                        () => NavigationHelper.goToStatus(
-                                          context,
-                                        ),
-                                    gradient: [
-                                      colorScheme.secondary,
-                                      colorScheme.primary,
-                                    ],
-                                    delay: 0.2,
-                                    animationController: _animationController,
-                                  ),
-                                ],
-                              ),
-                            ),
-
                             SizedBox(height: 20.h),
 
                             // Welcome Section
@@ -387,26 +341,6 @@ class _HomeScreenState extends State<HomeScreen>
                           }
                           return Container();
                         },
-                      ),
-                    ),
-
-                    // Gamification Summary
-                    SliverToBoxAdapter(
-                      child: AnimatedBuilder(
-                        animation: _animationController,
-                        builder: (context, child) {
-                          return Transform.translate(
-                            offset: Offset(
-                              0,
-                              (1 - _animationController.value) * 30,
-                            ),
-                            child: Opacity(
-                              opacity: _animationController.value,
-                              child: child,
-                            ),
-                          );
-                        },
-                        child: const GamificationSummaryWidget(),
                       ),
                     ),
 

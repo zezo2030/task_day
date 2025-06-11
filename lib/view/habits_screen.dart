@@ -8,7 +8,6 @@ import 'package:task_day/models/habit_model.dart';
 import 'package:task_day/widgets/measurable_habit_card.dart';
 import 'package:task_day/widgets/non_measurable_habit_card.dart';
 import 'package:task_day/widgets/habit_streak_calendar.dart';
-import 'package:task_day/widgets/points_earned_dialog.dart';
 import 'package:task_day/services/hive_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:task_day/core/themes/app_theme.dart';
@@ -40,9 +39,6 @@ class _HabitsScreenState extends State<HabitsScreen>
 
     // Load habits once when screen is created
     _loadHabits();
-
-    // Check for earned points to display
-    _checkForEarnedPoints();
   }
 
   // Separate method to load habits
@@ -114,33 +110,6 @@ class _HabitsScreenState extends State<HabitsScreen>
     }
   }
 
-  void _checkForEarnedPoints() {
-    // Check periodically for earned points
-    Future.delayed(const Duration(milliseconds: 500), () {
-      final earnedPointsData = HiveService.getLastEarnedPoints();
-      if (earnedPointsData != null && mounted) {
-        final timestamp = earnedPointsData['timestamp'] as int;
-        final now = DateTime.now().millisecondsSinceEpoch;
-
-        // Show dialog if points were earned in the last 2 seconds
-        if (now - timestamp < 2000) {
-          showDialog(
-            context: context,
-            barrierDismissible: true,
-            builder:
-                (context) => PointsEarnedDialog(
-                  pointsEarned: earnedPointsData['points'] as int,
-                  habitTitle: earnedPointsData['habitTitle'] as String,
-                ),
-          );
-
-          // Clear the earned points after showing
-          HiveService.clearEarnedPoints();
-        }
-      }
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -166,11 +135,6 @@ class _HabitsScreenState extends State<HabitsScreen>
                     state is HabitAdded) {
                   // Refresh the habits list after any habit state change
                   context.read<HabitCubit>().getHabits();
-
-                  // Check for earned points after completion
-                  if (state is HabitCompleted) {
-                    _checkForEarnedPoints();
-                  }
                 } else if (state is HabitsLoaded) {
                   // Update local habits list and trigger UI rebuild
                   setState(() {

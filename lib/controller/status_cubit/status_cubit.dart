@@ -35,7 +35,17 @@ class StatusCubit extends Cubit<StatusState> {
       final monthlyProgress =
           await StoredStatsService.calculateMonthlyProgress();
 
-      // الخطوة 5: دمج البيانات وإرسالها
+      // الخطوة 5: حساب البيانات المدمجة
+      final totalItems =
+          quickStats.todayTotalTasks + quickStats.todayTotalHabits;
+      final completedItems =
+          quickStats.todayCompletedTasks + quickStats.todayCompletedHabits;
+      final combinedRate = totalItems > 0 ? (completedItems / totalItems) : 0.0;
+
+      // الخطوة 6: حساب معدلات الأسبوع
+      final weeklyRates = await getWeeklyCompletionRates();
+
+      // الخطوة 7: دمج البيانات وإرسالها
       final statusData = StatusData(
         // البيانات الفورية
         todayCompletedTasks: quickStats.todayCompletedTasks,
@@ -47,9 +57,15 @@ class StatusCubit extends Cubit<StatusState> {
         currentLongestStreak: quickStats.currentLongestStreak,
         currentProductivityScore: quickStats.productivityScore,
 
+        // البيانات المدمجة
+        todayTotalItems: totalItems,
+        todayCompletedItems: completedItems,
+        todayCombinedCompletionRate: combinedRate,
+
         // البيانات المخزنة
         weeklyProgress: weeklyProgress,
         monthlyProgress: monthlyProgress,
+        weeklyCompletionRates: weeklyRates,
 
         // بيانات العادات مع السلاسل
         habitsWithStreaks: quickStats.habitsWithStreaks,
@@ -101,6 +117,13 @@ class StatusCubit extends Cubit<StatusState> {
       final habits = await HiveService.getAllHabits();
       final quickStats = QuickStatsService.calculateQuickStats(tasks, habits);
 
+      // حساب البيانات المدمجة للتحديث السريع
+      final totalItems =
+          quickStats.todayTotalTasks + quickStats.todayTotalHabits;
+      final completedItems =
+          quickStats.todayCompletedTasks + quickStats.todayCompletedHabits;
+      final combinedRate = totalItems > 0 ? (completedItems / totalItems) : 0.0;
+
       // تحديث البيانات السريعة مع الاحتفاظ بالبيانات المخزنة
       final updatedStatusData = currentState.statusData.copyWith(
         todayCompletedTasks: quickStats.todayCompletedTasks,
@@ -111,6 +134,9 @@ class StatusCubit extends Cubit<StatusState> {
         todayHabitsCompletionRate: quickStats.todayHabitsRate,
         currentLongestStreak: quickStats.currentLongestStreak,
         currentProductivityScore: quickStats.productivityScore,
+        todayTotalItems: totalItems,
+        todayCompletedItems: completedItems,
+        todayCombinedCompletionRate: combinedRate,
         habitsWithStreaks: quickStats.habitsWithStreaks,
         lastCalculatedAt: quickStats.calculatedAt,
       );
@@ -159,6 +185,12 @@ class StatusCubit extends Cubit<StatusState> {
       dayHabits,
     );
 
+    // حساب البيانات المدمجة لهذا التاريخ
+    final totalItems = quickStats.todayTotalTasks + quickStats.todayTotalHabits;
+    final completedItems =
+        quickStats.todayCompletedTasks + quickStats.todayCompletedHabits;
+    final combinedRate = totalItems > 0 ? (completedItems / totalItems) : 0.0;
+
     final statusData = StatusData(
       todayCompletedTasks: quickStats.todayCompletedTasks,
       todayTotalTasks: quickStats.todayTotalTasks,
@@ -168,8 +200,12 @@ class StatusCubit extends Cubit<StatusState> {
       todayHabitsCompletionRate: quickStats.todayHabitsRate,
       currentLongestStreak: quickStats.currentLongestStreak,
       currentProductivityScore: quickStats.productivityScore,
+      todayTotalItems: totalItems,
+      todayCompletedItems: completedItems,
+      todayCombinedCompletionRate: combinedRate,
       weeklyProgress: 0.0, // غير متوفر للتواريخ السابقة
       monthlyProgress: 0.0, // غير متوفر للتواريخ السابقة
+      weeklyCompletionRates: [], // غير متوفر للتواريخ السابقة
       habitsWithStreaks: quickStats.habitsWithStreaks,
       lastCalculatedAt: DateTime.now(),
       dataSource: 'calculated_for_date',
@@ -204,5 +240,155 @@ class StatusCubit extends Cubit<StatusState> {
     } catch (e) {
       print('خطأ في تنظيف البيانات: $e');
     }
+  }
+
+  //get all habits compltetd for all week days
+  Future<List<HabitModel>> getHabitsCompletedForAllWeekDays() async {
+    final habits = await HiveService.getAllHabits();
+    final now = DateTime.now();
+    final startOfWeek = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(Duration(days: now.weekday - 1));
+
+    return habits.where((habit) {
+      // Check if habit was completed on any day of this week
+      return habit.completedDates.any((completedDate) {
+        final completedDay = DateTime(
+          completedDate.year,
+          completedDate.month,
+          completedDate.day,
+        );
+        return completedDay.isAfter(
+              startOfWeek.subtract(const Duration(days: 1)),
+            ) &&
+            completedDay.isBefore(startOfWeek.add(const Duration(days: 7)));
+      });
+    }).toList();
+  }
+
+  //get all tasks completed for all week days
+  Future<List<TaskModel>> getTasksCompletedForAllWeekDays() async {
+    final tasks = await HiveService.getAllTasks();
+    final now = DateTime.now();
+    final startOfWeek = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(Duration(days: now.weekday - 1));
+    final endOfWeek = startOfWeek.add(const Duration(days: 6));
+
+    return tasks.where((task) {
+      return task.isDone &&
+          task.startDate.isBefore(endOfWeek.add(const Duration(days: 1))) &&
+          task.endDate.isAfter(startOfWeek.subtract(const Duration(days: 1)));
+    }).toList();
+  }
+
+  /// Calculate combined completion percentage for habits and tasks
+  Future<double> getCombinedCompletionPercentage({DateTime? date}) async {
+    final calcDate = date ?? DateTime.now();
+    final tasks = await HiveService.getAllTasks();
+    final habits = await HiveService.getAllHabits();
+
+    // Get today's tasks and habits
+    final todayTasks = _filterTasksForDate(tasks, calcDate);
+    final todayHabits = habits; // All habits are available each day
+
+    // Calculate completed items
+    final completedTasks = todayTasks.where((task) => task.isDone).length;
+    final completedHabits =
+        habits.where((habit) {
+          return habit.completedDates.any((completedDate) {
+            final completedDay = DateTime(
+              completedDate.year,
+              completedDate.month,
+              completedDate.day,
+            );
+            final targetDay = DateTime(
+              calcDate.year,
+              calcDate.month,
+              calcDate.day,
+            );
+            return completedDay.isAtSameMomentAs(targetDay);
+          });
+        }).length;
+
+    // Calculate totals
+    final totalTasks = todayTasks.length;
+    final totalHabits = todayHabits.length;
+    final totalItems = totalTasks + totalHabits;
+    final completedItems = completedTasks + completedHabits;
+
+    // Return completion percentage
+    return totalItems > 0 ? (completedItems / totalItems) : 0.0;
+  }
+
+  /// Get daily completion rates for the current week
+  Future<List<double>> getWeeklyCompletionRates() async {
+    final now = DateTime.now();
+    final startOfWeek = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(Duration(days: now.weekday - 1));
+
+    final weeklyRates = <double>[];
+
+    for (int i = 0; i < 7; i++) {
+      final currentDay = startOfWeek.add(Duration(days: i));
+      // Only calculate for past days and today
+      if (currentDay.isAfter(now)) {
+        weeklyRates.add(0.0);
+      } else {
+        final completionRate = await getCombinedCompletionPercentage(
+          date: currentDay,
+        );
+        weeklyRates.add(completionRate);
+      }
+    }
+
+    return weeklyRates;
+  }
+
+  /// Get completion data for a specific day
+  Future<Map<String, dynamic>> getDayCompletionData(DateTime date) async {
+    final tasks = await HiveService.getAllTasks();
+    final habits = await HiveService.getAllHabits();
+
+    // Get day's tasks and habits
+    final dayTasks = _filterTasksForDate(tasks, date);
+    final dayHabits = habits;
+
+    // Calculate completed items
+    final completedTasks = dayTasks.where((task) => task.isDone).length;
+    final completedHabits =
+        habits.where((habit) {
+          return habit.completedDates.any((completedDate) {
+            final completedDay = DateTime(
+              completedDate.year,
+              completedDate.month,
+              completedDate.day,
+            );
+            final targetDay = DateTime(date.year, date.month, date.day);
+            return completedDay.isAtSameMomentAs(targetDay);
+          });
+        }).length;
+
+    final totalTasks = dayTasks.length;
+    final totalHabits = dayHabits.length;
+    final totalItems = totalTasks + totalHabits;
+    final completedItems = completedTasks + completedHabits;
+
+    return {
+      'totalTasks': totalTasks,
+      'completedTasks': completedTasks,
+      'totalHabits': totalHabits,
+      'completedHabits': completedHabits,
+      'totalItems': totalItems,
+      'completedItems': completedItems,
+      'completionRate': totalItems > 0 ? (completedItems / totalItems) : 0.0,
+    };
   }
 }

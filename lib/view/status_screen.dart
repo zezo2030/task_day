@@ -5,7 +5,6 @@ import 'package:task_day/core/themes/app_theme.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:task_day/controller/status_cubit/status_cubit.dart';
-import 'package:task_day/services/quick_stats_service.dart';
 import 'package:intl/intl.dart';
 
 class StatusScreen extends StatefulWidget {

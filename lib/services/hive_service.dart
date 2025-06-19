@@ -368,12 +368,15 @@ class HiveService {
       // If never reset or last reset was before today, perform reset
       if (lastResetDate == null || lastResetDate.isBefore(today)) {
         await performDailyHabitsReset();
+        await performDailyRoutineReset();
 
         // Save today as last reset date
         await box.put('lastResetDate', today.toIso8601String());
 
         if (kDebugMode) {
-          print('Daily habits reset performed for ${today.toIso8601String()}');
+          print(
+            'Daily habits and routines reset performed for ${today.toIso8601String()}',
+          );
         }
       }
     } catch (e) {
@@ -414,9 +417,73 @@ class HiveService {
     }
   }
 
+  /// Perform daily reset for all daily routines
+  static Future<void> performDailyRoutineReset() async {
+    try {
+      final box = getDailyRoutineBox();
+      final allRoutines = await getAllDailyRoutines();
+      final today = DateTime.now();
+      final todayDate = DateTime(today.year, today.month, today.day);
+
+      for (final routine in allRoutines) {
+        // Only reset recurring daily routines
+        if (routine.isRecurringDaily) {
+          final routineDate = DateTime(
+            routine.dateTime.year,
+            routine.dateTime.month,
+            routine.dateTime.day,
+          );
+
+          // If this routine is from today, reset it
+          if (routineDate.isAtSameMomentAs(todayDate)) {
+            final updatedRoutine = routine.copyWith(isCompleted: false);
+            await box.put(routine.id, updatedRoutine);
+          }
+          // If this routine is from a previous day and is recurring,
+          // create a new instance for today
+          else if (routineDate.isBefore(todayDate)) {
+            // Check if we already have a routine for today with the same name and times
+            final todayRoutineExists = allRoutines.any((r) {
+              final rDate = DateTime(
+                r.dateTime.year,
+                r.dateTime.month,
+                r.dateTime.day,
+              );
+              return rDate.isAtSameMomentAs(todayDate) &&
+                  r.name == routine.name &&
+                  r.startTime == routine.startTime &&
+                  r.endTime == routine.endTime;
+            });
+
+            if (!todayRoutineExists) {
+              // Create new routine for today
+              final newRoutine = routine.copyWith(
+                id: '${routine.id}_${todayDate.millisecondsSinceEpoch}',
+                dateTime: todayDate,
+                isCompleted: false,
+              );
+              await box.put(newRoutine.id, newRoutine);
+            }
+          }
+        }
+      }
+
+      if (kDebugMode) {
+        print(
+          'Daily reset completed for ${allRoutines.where((r) => r.isRecurringDaily).length} recurring daily routines',
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error performing daily routine reset: $e');
+      }
+    }
+  }
+
   /// Manually trigger daily reset (for testing or manual reset)
   static Future<void> manualDailyReset() async {
     await performDailyHabitsReset();
+    await performDailyRoutineReset();
 
     // Update last reset date
     final box = getSettingsBox();
@@ -425,7 +492,7 @@ class HiveService {
     await box.put('lastResetDate', today.toIso8601String());
 
     if (kDebugMode) {
-      print('Manual daily reset performed');
+      print('Manual daily reset performed for habits and routines');
     }
   }
 
@@ -460,6 +527,22 @@ class HiveService {
   static Future<List<DailyRoutineModel>> getAllDailyRoutines() async {
     final box = getDailyRoutineBox();
     return box.values.toList();
+  }
+
+  /// Get today's daily routines
+  static Future<List<DailyRoutineModel>> getTodayDailyRoutines() async {
+    final box = getDailyRoutineBox();
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+
+    return box.values.where((routine) {
+      final routineDate = DateTime(
+        routine.dateTime.year,
+        routine.dateTime.month,
+        routine.dateTime.day,
+      );
+      return routineDate.isAtSameMomentAs(todayDate);
+    }).toList();
   }
 
   /// Get daily routine by date

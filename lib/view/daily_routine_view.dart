@@ -30,7 +30,7 @@ class _DailyTaskViewState extends State<DailyTaskView>
     )..forward();
 
     _dailyRoutineCubit = context.read<DailyRoutineCubit>();
-    _dailyRoutineCubit.getDailyRoutines();
+    _dailyRoutineCubit.getTodayDailyRoutines();
   }
 
   @override
@@ -45,7 +45,7 @@ class _DailyTaskViewState extends State<DailyTaskView>
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
       // Refresh data when returning to this screen
-      _dailyRoutineCubit.getDailyRoutines();
+      _dailyRoutineCubit.getTodayDailyRoutines();
     }
   }
 
@@ -146,7 +146,7 @@ class _DailyTaskViewState extends State<DailyTaskView>
                             context,
                           );
                           // Always refresh when returning from create screen
-                          _dailyRoutineCubit.getDailyRoutines();
+                          _dailyRoutineCubit.getTodayDailyRoutines();
                         },
                       ),
                       SizedBox(width: 8.w),
@@ -238,7 +238,7 @@ class _DailyTaskViewState extends State<DailyTaskView>
                   context,
                 );
                 // Always refresh when returning from create screen
-                _dailyRoutineCubit.getDailyRoutines();
+                _dailyRoutineCubit.getTodayDailyRoutines();
               },
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,

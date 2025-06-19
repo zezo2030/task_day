@@ -27,7 +27,24 @@ class DailyRoutineCubit extends Cubit<DailyRoutineState> {
   Future<void> getDailyRoutines() async {
     emit(DailyRoutineLoading());
     try {
+      // Check and perform daily reset if needed before loading routines
+      await HiveService.checkAndPerformDailyReset();
+
       final dailyRoutines = await HiveService.getAllDailyRoutines();
+      emit(DailyRoutineLoaded(dailyRoutines: dailyRoutines));
+    } catch (e) {
+      emit(DailyRoutineError(message: e.toString()));
+    }
+  }
+
+  /// Get today's daily routines only
+  Future<void> getTodayDailyRoutines() async {
+    emit(DailyRoutineLoading());
+    try {
+      // Check and perform daily reset if needed before loading routines
+      await HiveService.checkAndPerformDailyReset();
+
+      final dailyRoutines = await HiveService.getTodayDailyRoutines();
       emit(DailyRoutineLoaded(dailyRoutines: dailyRoutines));
     } catch (e) {
       emit(DailyRoutineError(message: e.toString()));

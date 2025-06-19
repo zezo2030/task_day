@@ -33,6 +33,29 @@ class DailyRoutineModel extends HiveObject {
     this.isRecurringDaily = false,
   });
 
+  // copyWith method for creating modified copies
+  DailyRoutineModel copyWith({
+    String? id,
+    String? name,
+    TimeOfDay? startTime,
+    TimeOfDay? endTime,
+    bool? isCompleted,
+    int? counterReperter,
+    DateTime? dateTime,
+    bool? isRecurringDaily,
+  }) {
+    return DailyRoutineModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      startTime: startTime ?? this.startTime,
+      endTime: endTime ?? this.endTime,
+      isCompleted: isCompleted ?? this.isCompleted,
+      counterReperter: counterReperter ?? this.counterReperter,
+      dateTime: dateTime ?? this.dateTime,
+      isRecurringDaily: isRecurringDaily ?? this.isRecurringDaily,
+    );
+  }
+
   // Helper methods for TimeOfDay conversion
   static int timeOfDayToMinutes(TimeOfDay time) {
     return time.hour * 60 + time.minute;

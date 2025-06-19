@@ -15,7 +15,7 @@ class NavigationHelper {
   static const String status = '/status';
   static const String createTask = '/create-task';
   static const String createHabit = '/create-habit';
-
+  static const String createDailyRoutine = '/create-daily-routine';
   // Navigation with tab support
   static void goToHomeWithTab(BuildContext context, int tabIndex) {
     context.go('/?tab=$tabIndex');
@@ -54,6 +54,14 @@ class NavigationHelper {
   // Task navigation
   static void goToTaskDetails(BuildContext context, TaskModel task) {
     context.push('/task-details/${task.id}', extra: task);
+  }
+
+  static void goToCreateDailyRoutine(BuildContext context) {
+    context.push(createDailyRoutine);
+  }
+
+  static Future<T?> goToCreateDailyRoutineWithResult<T>(BuildContext context) {
+    return context.push<T>(createDailyRoutine);
   }
 
   // Habit navigation

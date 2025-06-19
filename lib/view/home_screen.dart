@@ -344,6 +344,100 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
                     ),
 
+                    // Daily Tasks Card
+                    SliverToBoxAdapter(
+                      child: AnimatedBuilder(
+                        animation: _animationController,
+                        builder: (context, child) {
+                          return Transform.translate(
+                            offset: Offset(
+                              0,
+                              (1 - _animationController.value) * 30,
+                            ),
+                            child: Opacity(
+                              opacity: _animationController.value,
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: GestureDetector(
+                          onTap: () => context.push('/daily-tasks'),
+                          child: Container(
+                            margin: EdgeInsets.symmetric(
+                              horizontal: 20.w,
+                              vertical: 16.h,
+                            ),
+                            padding: EdgeInsets.all(20.w),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  const Color(0xFF6366F1).withOpacity(0.8),
+                                  const Color(0xFF8B5CF6).withOpacity(0.6),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(20.r),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(
+                                    0xFF6366F1,
+                                  ).withOpacity(0.3),
+                                  blurRadius: 15,
+                                  spreadRadius: 5,
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 60.w,
+                                  height: 60.h,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.white.withOpacity(0.2),
+                                  ),
+                                  child: Icon(
+                                    Icons.today_outlined,
+                                    color: Colors.white,
+                                    size: 28.sp,
+                                  ),
+                                ),
+                                SizedBox(width: 16.w),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "Daily Tasks",
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 18.sp,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      SizedBox(height: 4.h),
+                                      Text(
+                                        "Manage your daily routines",
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 14.sp,
+                                          color: Colors.white70,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.arrow_forward_ios,
+                                  color: Colors.white,
+                                  size: 20.sp,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
                     // Magical Quote
                     // SliverToBoxAdapter(
                     //   child: AnimatedBuilder(

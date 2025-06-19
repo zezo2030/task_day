@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:task_day/core/utils/time_of_day_adapter.dart';
+import 'package:task_day/models/daily_routine_model.dart';
 import 'package:task_day/models/habit_model.dart';
 import 'package:task_day/models/task_model.dart';
 import 'package:task_day/services/stored_stats_service.dart';
@@ -8,6 +10,7 @@ class HiveService {
   static const String habitsBoxName = 'habits';
   static const String tasksBoxName = 'tasks';
   static const String settingsBoxName = 'settings';
+  static const String dailyRoutineBoxName = 'daily_routine';
 
   /// Initialize Hive and register adapters
   static Future<void> init() async {
@@ -18,12 +21,13 @@ class HiveService {
     Hive.registerAdapter(HabitModelAdapter());
     Hive.registerAdapter(TaskModelAdapter());
     Hive.registerAdapter(SubTaskModelAdapter());
-
+    Hive.registerAdapter(DailyRoutineModelAdapter());
+    Hive.registerAdapter(TimeOfDayAdapter());
     // Open boxes
     await Hive.openBox<HabitModel>(habitsBoxName);
     await Hive.openBox<TaskModel>(tasksBoxName);
     await Hive.openBox(settingsBoxName);
-
+    await Hive.openBox<DailyRoutineModel>(dailyRoutineBoxName);
     // Initialize stored stats service
     await StoredStatsService.init();
 
@@ -439,6 +443,47 @@ class HiveService {
       }
     }
     return null;
+  }
+
+  /// Get daily routine box
+  static Box<DailyRoutineModel> getDailyRoutineBox() {
+    return Hive.box<DailyRoutineModel>(dailyRoutineBoxName);
+  }
+
+  /// Add a daily routine
+  static Future<void> addDailyRoutine(DailyRoutineModel dailyRoutine) async {
+    final box = getDailyRoutineBox();
+    await box.put(dailyRoutine.id, dailyRoutine);
+  }
+
+  /// Get all daily routines
+  static Future<List<DailyRoutineModel>> getAllDailyRoutines() async {
+    final box = getDailyRoutineBox();
+    return box.values.toList();
+  }
+
+  /// Get daily routine by date
+  static Future<DailyRoutineModel?> getDailyRoutineByDate(DateTime date) async {
+    final box = getDailyRoutineBox();
+    return box.values.firstWhere((routine) => routine.dateTime == date);
+  }
+
+  /// Update a daily routine
+  static Future<void> updateDailyRoutine(DailyRoutineModel dailyRoutine) async {
+    final box = getDailyRoutineBox();
+    await box.put(dailyRoutine.id, dailyRoutine);
+  }
+
+  /// Delete a daily routine
+  static Future<void> deleteDailyRoutine(String id) async {
+    final box = getDailyRoutineBox();
+    await box.delete(id);
+  }
+
+  /// Clear all daily routines
+  static Future<void> clearAllDailyRoutines() async {
+    final box = getDailyRoutineBox();
+    await box.clear();
   }
 
   /// Close Hive

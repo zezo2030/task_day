@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:task_day/view/create_habit_screen.dart';
 import 'package:task_day/view/create_task_screen.dart';
+import 'package:task_day/view/create_daily_routine_screen.dart';
 import 'package:task_day/view/edit_task_screen.dart';
 import 'package:task_day/view/edit_habit_screen.dart';
 import 'package:task_day/view/habit_details_screen.dart';
@@ -13,12 +14,15 @@ import 'package:task_day/view/main_view.dart';
 import 'package:task_day/view/status_screen.dart';
 import 'package:task_day/view/tasks_screen.dart';
 import 'package:task_day/view/task_details_screen.dart';
+import 'package:task_day/view/daily_routine_view.dart';
 
 import 'package:task_day/models/task_model.dart';
 import 'package:task_day/models/habit_model.dart';
 import 'package:task_day/services/hive_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:task_day/controller/habit_cubit/habit_cubit.dart';
+import 'package:task_day/controller/daily_routine_cubit/daily_routine_cubit.dart';
+import 'package:task_day/core/router/navigation_helper.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -49,6 +53,14 @@ class AppRouter {
         builder: (context, state) => const StatusScreen(),
       ),
       GoRoute(
+        path: '/daily-tasks',
+        builder:
+            (context, state) => BlocProvider(
+              create: (context) => DailyRoutineCubit(),
+              child: const DailyTaskView(),
+            ),
+      ),
+      GoRoute(
         path: '/create-task',
         builder: (context, state) => const CreateTaskScreen(),
       ),
@@ -58,6 +70,14 @@ class AppRouter {
             (context, state) => BlocProvider(
               create: (context) => HabitCubit(),
               child: const CreateHabitScreen(),
+            ),
+      ),
+      GoRoute(
+        path: NavigationHelper.createDailyRoutine,
+        builder:
+            (context, state) => BlocProvider(
+              create: (context) => DailyRoutineCubit(),
+              child: const CreateDailyRoutineScreen(),
             ),
       ),
 

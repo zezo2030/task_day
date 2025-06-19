@@ -8,7 +8,6 @@ import 'package:task_day/models/habit_model.dart';
 import 'package:task_day/widgets/measurable_habit_card.dart';
 import 'package:task_day/widgets/non_measurable_habit_card.dart';
 import 'package:task_day/widgets/habit_streak_calendar.dart';
-import 'package:task_day/services/hive_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:task_day/core/themes/app_theme.dart';
 

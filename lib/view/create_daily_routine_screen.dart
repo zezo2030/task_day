@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:task_day/controller/daily_routine_cubit/daily_routine_cubit.dart';
 import 'package:task_day/models/daily_routine_model.dart';
+import 'package:task_day/services/notification_service.dart';
 import 'package:uuid/uuid.dart';
 
 class CreateDailyRoutineScreen extends StatefulWidget {
@@ -298,7 +299,34 @@ class _CreateDailyRoutineScreenState extends State<CreateDailyRoutineScreen>
               ),
             ),
             const Spacer(),
-            SizedBox(width: 48.w), // Balance for back button
+            // زر اختبار الإشعارات
+            IconButton(
+              icon: Container(
+                padding: EdgeInsets.all(8.w),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.orange.withOpacity(0.2),
+                  border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                ),
+                child: Icon(
+                  Icons.notifications_active,
+                  color: Colors.orange,
+                  size: 18.sp,
+                ),
+              ),
+              onPressed: () async {
+                await NotificationService.showTestNotification();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'تم إرسال إشعار اختبار!',
+                      style: GoogleFonts.poppins(color: Colors.white),
+                    ),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              },
+            ),
           ],
         ),
         SizedBox(height: 20.h),

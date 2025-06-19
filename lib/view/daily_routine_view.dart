@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:task_day/controller/daily_routine_cubit/daily_routine_cubit.dart';
 import 'package:task_day/core/router/navigation_helper.dart';
 import 'package:task_day/models/daily_routine_model.dart';
+import 'package:task_day/services/notification_service.dart';
 
 class DailyTaskView extends StatefulWidget {
   const DailyTaskView({super.key});
@@ -127,6 +128,33 @@ class _DailyTaskViewState extends State<DailyTaskView>
                       onPressed: () => context.pop(),
                     ),
                     actions: [
+                      // زر اختبار الإشعارات
+                      IconButton(
+                        icon: Container(
+                          padding: EdgeInsets.all(8.w),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.orange.withOpacity(0.2),
+                          ),
+                          child: Icon(
+                            Icons.notifications_active,
+                            color: Colors.orange,
+                            size: 18.sp,
+                          ),
+                        ),
+                        onPressed: () async {
+                          await NotificationService.showTestNotification();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'تم إرسال إشعار اختبار!',
+                                style: GoogleFonts.poppins(color: Colors.white),
+                              ),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        },
+                      ),
                       IconButton(
                         icon: Container(
                           padding: EdgeInsets.all(8.w),

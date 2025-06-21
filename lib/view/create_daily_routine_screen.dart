@@ -299,34 +299,6 @@ class _CreateDailyRoutineScreenState extends State<CreateDailyRoutineScreen>
               ),
             ),
             const Spacer(),
-            // زر اختبار الإشعارات
-            IconButton(
-              icon: Container(
-                padding: EdgeInsets.all(8.w),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.orange.withOpacity(0.2),
-                  border: Border.all(color: Colors.orange.withOpacity(0.3)),
-                ),
-                child: Icon(
-                  Icons.notifications_active,
-                  color: Colors.orange,
-                  size: 18.sp,
-                ),
-              ),
-              onPressed: () async {
-                await NotificationService.showTestNotification();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'تم إرسال إشعار اختبار!',
-                      style: GoogleFonts.poppins(color: Colors.white),
-                    ),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              },
-            ),
           ],
         ),
         SizedBox(height: 20.h),

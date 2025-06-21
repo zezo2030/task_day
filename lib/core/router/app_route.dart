@@ -15,6 +15,7 @@ import 'package:task_day/view/status_screen.dart';
 import 'package:task_day/view/tasks_screen.dart';
 import 'package:task_day/view/task_details_screen.dart';
 import 'package:task_day/view/daily_routine_view.dart';
+import 'package:task_day/view/weekly_review_screen.dart';
 
 import 'package:task_day/models/task_model.dart';
 import 'package:task_day/models/habit_model.dart';
@@ -22,6 +23,7 @@ import 'package:task_day/services/hive_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:task_day/controller/habit_cubit/habit_cubit.dart';
 import 'package:task_day/controller/daily_routine_cubit/daily_routine_cubit.dart';
+import 'package:task_day/controller/weekly_review_cubit/weekly_review_cubit.dart';
 import 'package:task_day/core/router/navigation_helper.dart';
 
 class AppRouter {
@@ -78,6 +80,14 @@ class AppRouter {
             (context, state) => BlocProvider(
               create: (context) => DailyRoutineCubit(),
               child: const CreateDailyRoutineScreen(),
+            ),
+      ),
+      GoRoute(
+        path: '/weekly-review',
+        builder:
+            (context, state) => BlocProvider(
+              create: (context) => WeeklyReviewCubit(),
+              child: const WeeklyReviewScreen(),
             ),
       ),
 

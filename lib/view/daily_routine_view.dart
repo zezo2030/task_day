@@ -128,33 +128,6 @@ class _DailyTaskViewState extends State<DailyTaskView>
                       onPressed: () => context.pop(),
                     ),
                     actions: [
-                      // زر اختبار الإشعارات
-                      IconButton(
-                        icon: Container(
-                          padding: EdgeInsets.all(8.w),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.orange.withOpacity(0.2),
-                          ),
-                          child: Icon(
-                            Icons.notifications_active,
-                            color: Colors.orange,
-                            size: 18.sp,
-                          ),
-                        ),
-                        onPressed: () async {
-                          await NotificationService.showTestNotification();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'تم إرسال إشعار اختبار!',
-                                style: GoogleFonts.poppins(color: Colors.white),
-                              ),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
-                        },
-                      ),
                       IconButton(
                         icon: Container(
                           padding: EdgeInsets.all(8.w),

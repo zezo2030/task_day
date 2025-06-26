@@ -15,6 +15,7 @@ import 'package:task_day/view/status_screen.dart';
 import 'package:task_day/view/tasks_screen.dart';
 import 'package:task_day/view/task_details_screen.dart';
 import 'package:task_day/view/daily_routine_view.dart';
+import 'package:task_day/view/telegram_settings_screen.dart';
 
 import 'package:task_day/models/task_model.dart';
 import 'package:task_day/models/habit_model.dart';
@@ -79,6 +80,10 @@ class AppRouter {
               create: (context) => DailyRoutineCubit(),
               child: const CreateDailyRoutineScreen(),
             ),
+      ),
+      GoRoute(
+        path: '/telegram-settings',
+        builder: (context, state) => const TelegramSettingsScreen(),
       ),
 
       GoRoute(

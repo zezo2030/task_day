@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:task_day/controller/task_cubit/task_cubit.dart';
+import 'package:task_day/core/cache/cache_helper.dart';
 import 'package:task_day/core/themes/app_theme.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:task_day/services/hive_service.dart';
@@ -17,6 +18,9 @@ void main() async {
 
   // Initialize Notifications
   await NotificationService.initialize();
+
+  //initialize cache helper
+  await CacheHelper.init();
 
   runApp(const MainApp());
 }

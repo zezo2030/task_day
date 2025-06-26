@@ -1,6 +1,6 @@
 name: task_day
 description: "A new Flutter project."
-publish_to: 'none'
+publish_to: "none"
 version: 0.1.0
 
 environment:
@@ -8,7 +8,8 @@ environment:
 
 dependencies:
   animated_bottom_navigation_bar: ^1.4.0
-  
+
+  dio: ^5.8.0+1
   equatable: ^2.0.7
   fluentui_icons: ^1.0.0
   flutter:
@@ -25,6 +26,7 @@ dependencies:
   path_provider: ^2.1.5
   percent_indicator: ^4.2.5
   permission_handler: ^12.0.0+1
+  shared_preferences: ^2.5.3
   timezone: ^0.10.1
   uuid: ^4.5.1
 

@@ -6,6 +6,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:task_day/controller/status_cubit/status_cubit.dart';
 import 'package:intl/intl.dart';
+import 'package:task_day/services/send_telegram_service.dart';
+import 'package:go_router/go_router.dart';
 
 class StatusScreen extends StatefulWidget {
   const StatusScreen({super.key});
@@ -268,18 +270,86 @@ class _StatusScreenState extends State<StatusScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(height: 10.h),
-          Text(
-            'Progress Overview',
-            style: GoogleFonts.poppins(
-              fontSize: 32.sp,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            formattedDate,
-            style: GoogleFonts.poppins(fontSize: 16.sp, color: Colors.white70),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Progress Overview',
+                      style: GoogleFonts.poppins(
+                        fontSize: 32.sp,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 8.h),
+                    Text(
+                      formattedDate,
+                      style: GoogleFonts.poppins(
+                        fontSize: 16.sp,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Row(
+                children: [
+                  // Telegram settings button
+                  IconButton(
+                    icon: Container(
+                      padding: EdgeInsets.all(8.w),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.blue.withOpacity(0.2),
+                      ),
+                      child: Icon(
+                        Icons.telegram,
+                        color: Colors.blue,
+                        size: 18.sp,
+                      ),
+                    ),
+                    onPressed: () {
+                      context.push('/telegram-settings');
+                    },
+                  ),
+                  // Send daily summary button
+                  IconButton(
+                    icon: Container(
+                      padding: EdgeInsets.all(8.w),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.green.withOpacity(0.2),
+                      ),
+                      child: Icon(Icons.send, color: Colors.green, size: 18.sp),
+                    ),
+                    onPressed: () async {
+                      await _handleSendDailySummary();
+                    },
+                  ),
+                  // Refresh button
+                  IconButton(
+                    icon: Container(
+                      padding: EdgeInsets.all(8.w),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.1),
+                      ),
+                      child: Icon(
+                        Icons.refresh,
+                        color: Colors.white,
+                        size: 18.sp,
+                      ),
+                    ),
+                    onPressed: () {
+                      context.read<StatusCubit>().loadStatusData();
+                    },
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
       ),
@@ -882,5 +952,38 @@ class _StatusScreenState extends State<StatusScreen>
         ],
       ),
     );
+  }
+
+  Future<void> _handleSendDailySummary() async {
+    try {
+      // Initialize the service if not already done
+      await SendTelegramService.initialize();
+
+      final success = await SendTelegramService.sendDailySummary();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              success ? 'تم إرسال الملخص اليومي!' : 'فشل في إرسال الملخص',
+              style: GoogleFonts.poppins(color: Colors.white),
+            ),
+            backgroundColor: success ? Colors.green : Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'حدث خطأ: $e',
+              style: GoogleFonts.poppins(color: Colors.white),
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

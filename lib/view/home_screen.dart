@@ -1218,31 +1218,6 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
               ),
             ),
-            floatingActionButton: Container(
-              height: 64.h,
-              width: 64.w,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [colorScheme.secondary, colorScheme.primary],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: colorScheme.secondary.withOpacity(0.3),
-                    blurRadius: 15,
-                    spreadRadius: 5,
-                  ),
-                ],
-              ),
-              child: FloatingActionButton(
-                heroTag: 'homeScreenFAB',
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                onPressed:
-                    () => NavigationHelper.showCreateOptionsModal(context),
-                child: Icon(Icons.add, color: Colors.white, size: 32.sp),
-              ),
-            ),
           );
         },
       ),

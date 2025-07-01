@@ -597,32 +597,6 @@ class _HabitsScreenState extends State<HabitsScreen>
                 );
               },
             ),
-            floatingActionButton: Container(
-              height: 64.h,
-              width: 64.w,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [colorScheme.secondary, colorScheme.primary],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: colorScheme.secondary.withOpacity(0.3),
-                    blurRadius: 15,
-                    spreadRadius: 5,
-                  ),
-                ],
-              ),
-              child: FloatingActionButton(
-                heroTag: 'habitsScreenFAB',
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                onPressed: () {
-                  context.go("/create-habit");
-                },
-                child: Icon(Icons.add, color: Colors.white, size: 32.sp),
-              ),
-            ),
           );
         },
       ),

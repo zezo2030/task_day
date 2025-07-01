@@ -16,6 +16,7 @@ import 'package:task_day/view/tasks_screen.dart';
 import 'package:task_day/view/task_details_screen.dart';
 import 'package:task_day/view/daily_routine_view.dart';
 import 'package:task_day/view/weekly_review_screen.dart';
+import 'package:task_day/view/telegram_settings_screen.dart';
 
 import 'package:task_day/models/task_model.dart';
 import 'package:task_day/models/habit_model.dart';
@@ -89,6 +90,10 @@ class AppRouter {
               create: (context) => WeeklyReviewCubit(),
               child: const WeeklyReviewScreen(),
             ),
+      ),
+      GoRoute(
+        path: '/telegram-settings',
+        builder: (context, state) => const TelegramSettingsScreen(),
       ),
 
       GoRoute(

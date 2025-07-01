@@ -7,7 +7,6 @@ import 'package:intl/intl.dart';
 import 'package:task_day/controller/daily_routine_cubit/daily_routine_cubit.dart';
 import 'package:task_day/core/router/navigation_helper.dart';
 import 'package:task_day/models/daily_routine_model.dart';
-import 'package:task_day/services/notification_service.dart';
 
 class DailyTaskView extends StatefulWidget {
   const DailyTaskView({super.key});

@@ -6,7 +6,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:task_day/controller/daily_routine_cubit/daily_routine_cubit.dart';
 import 'package:task_day/models/daily_routine_model.dart';
-import 'package:task_day/services/notification_service.dart';
 import 'package:uuid/uuid.dart';
 
 class CreateDailyRoutineScreen extends StatefulWidget {

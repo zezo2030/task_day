@@ -5,6 +5,7 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
 import 'dart:developer';
+import 'package:task_day/services/send_telegram_service.dart';
 
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _notifications =
@@ -67,8 +68,8 @@ class NotificationService {
     // قناة تذكيرات بداية المهام
     const AndroidNotificationChannel startChannel = AndroidNotificationChannel(
       'routine_start_reminders',
-      'بداية المهام',
-      description: 'تذكيرات بداية المهام اليومية',
+      'Start of Tasks',
+      description: 'Reminders for start of daily tasks',
       importance: Importance.high,
       enableVibration: true,
       playSound: true,
@@ -77,8 +78,8 @@ class NotificationService {
     // قناة تذكيرات نهاية المهام
     const AndroidNotificationChannel endChannel = AndroidNotificationChannel(
       'routine_end_reminders',
-      'انتهاء المهام',
-      description: 'تذكيرات انتهاء المهام اليومية',
+      'End of Tasks',
+      description: 'Reminders for end of daily tasks',
       importance: Importance.high,
       enableVibration: true,
       playSound: true,
@@ -114,9 +115,18 @@ class NotificationService {
     log('Notification channels created');
   }
 
-  static void _onNotificationTap(NotificationResponse response) {
+  static void _onNotificationTap(NotificationResponse response) async {
     log('Notification tapped: ${response.payload}');
-    // يمكن إضافة منطق التنقل هنا حسب الحاجة
+    if (response.payload == 'daily_report') {
+      log('Sending daily report to Telegram...');
+      final success = await TelegramService.sendDailySummary();
+      if (success) {
+        log('✅ Daily report sent to Telegram successfully');
+      } else {
+        log('❌ Failed to send daily report to Telegram');
+      }
+    }
+    // Additional navigation logic can be added here if needed
   }
 
   /// جدولة إشعار بداية المهمة (قبل 10 دقائق)
@@ -142,14 +152,14 @@ class NotificationService {
 
         await _notifications.zonedSchedule(
           notificationId,
-          'قرب بداية المهمة 🕐',
-          'ستبدأ مهمة "${routine.name}" خلال 10 دقائق في ${_formatTimeOfDay(routine.startTime)}',
+          'Start of Task 🕐',
+          'Task "${routine.name}" will start in 10 minutes at ${_formatTimeOfDay(routine.startTime)}',
           scheduledDate,
           const NotificationDetails(
             android: AndroidNotificationDetails(
               'routine_start_reminders',
-              'بداية المهام',
-              channelDescription: 'تذكيرات بداية المهام اليومية',
+              'Start of Tasks',
+              channelDescription: 'Reminders for start of daily tasks',
               importance: Importance.high,
               priority: Priority.high,
               icon: '@mipmap/ic_launcher',
@@ -169,12 +179,12 @@ class NotificationService {
           payload: 'routine_start_${routine.id}',
         );
 
-        log('تم جدولة إشعار بداية المهمة بنجاح - ID: $notificationId');
+        log('Scheduled start reminder for task - ID: $notificationId');
       } else {
-        log('وقت التذكير في الماضي، لم يتم جدولة الإشعار');
+        log('Reminder time is in the past, notification not scheduled');
       }
     } catch (e) {
-      log('خطأ في جدولة إشعار بداية المهمة: $e');
+      log('Error scheduling start reminder: $e');
     }
   }
 
@@ -187,9 +197,9 @@ class NotificationService {
       final reminderTime = endDateTime.subtract(const Duration(minutes: 10));
       final notificationId = '${routine.id}_end'.hashCode;
 
-      log('جدولة إشعار نهاية المهمة: ${routine.name}');
-      log('وقت النهاية: $endDateTime');
-      log('وقت التذكير: $reminderTime');
+      log('Scheduling end reminder for task: ${routine.name}');
+      log('End time: $endDateTime');
+      log('Reminder time: $reminderTime');
 
       // تأكد أن وقت التذكير في المستقبل
       if (reminderTime.isAfter(DateTime.now())) {
@@ -197,14 +207,14 @@ class NotificationService {
 
         await _notifications.zonedSchedule(
           notificationId,
-          'قرب انتهاء المهمة ⏰',
-          'ستنتهي مهمة "${routine.name}" خلال 10 دقائق في ${_formatTimeOfDay(routine.endTime)}',
+          'End of Task ⏰',
+          'Task "${routine.name}" will end in 10 minutes at ${_formatTimeOfDay(routine.endTime)}',
           scheduledDate,
           const NotificationDetails(
             android: AndroidNotificationDetails(
               'routine_end_reminders',
-              'انتهاء المهام',
-              channelDescription: 'تذكيرات انتهاء المهام اليومية',
+              'End of Tasks',
+              channelDescription: 'Reminders for end of daily tasks',
               importance: Importance.high,
               priority: Priority.high,
               icon: '@mipmap/ic_launcher',
@@ -224,12 +234,12 @@ class NotificationService {
           payload: 'routine_end_${routine.id}',
         );
 
-        log('تم جدولة إشعار نهاية المهمة بنجاح - ID: $notificationId');
+        log('Scheduled end reminder for task - ID: $notificationId');
       } else {
-        log('وقت التذكير في الماضي، لم يتم جدولة الإشعار');
+        log('Reminder time is in the past, notification not scheduled');
       }
     } catch (e) {
-      log('خطأ في جدولة إشعار نهاية المهمة: $e');
+      log('Error scheduling end reminder: $e');
     }
   }
 
@@ -275,13 +285,13 @@ class NotificationService {
     try {
       await _notifications.show(
         999,
-        'اختبار الإشعارات 🔔',
-        'الإشعارات تعمل بشكل صحيح!',
+        'Test Notifications 🔔',
+        'Notifications are working correctly!',
         const NotificationDetails(
           android: AndroidNotificationDetails(
             'test_channel',
-            'اختبار',
-            channelDescription: 'قناة اختبار الإشعارات',
+            'Test',
+            channelDescription: 'Test notification channel',
             importance: Importance.high,
             priority: Priority.high,
             icon: '@mipmap/ic_launcher',
@@ -291,9 +301,9 @@ class NotificationService {
           iOS: DarwinNotificationDetails(),
         ),
       );
-      log('تم إظهار إشعار الاختبار بنجاح');
+      log('Test notification shown successfully');
     } catch (e) {
-      log('خطأ في إظهار إشعار الاختبار: $e');
+      log('Error showing test notification: $e');
     }
   }
 
@@ -301,18 +311,18 @@ class NotificationService {
   static Future<void> debugScheduledNotifications() async {
     try {
       final pending = await _notifications.pendingNotificationRequests();
-      log('عدد الإشعارات المجدولة: ${pending.length}');
+      log('Number of scheduled notifications: ${pending.length}');
 
       for (final notification in pending) {
-        log('إشعار مجدول:');
+        log('Scheduled notification:');
         log('  - ID: ${notification.id}');
-        log('  - العنوان: ${notification.title}');
-        log('  - الوصف: ${notification.body}');
+        log('  - Title: ${notification.title}');
+        log('  - Description: ${notification.body}');
         log('  - Payload: ${notification.payload}');
         log('---');
       }
     } catch (e) {
-      log('خطأ في فحص الإشعارات المجدولة: $e');
+      log('Error checking scheduled notifications: $e');
     }
   }
 
@@ -324,14 +334,14 @@ class NotificationService {
 
       await _notifications.zonedSchedule(
         9999,
-        'إشعار اختبار مجدول ⏰',
-        'هذا إشعار تم جدولته للاختبار في ${_formatTimeOfDay(TimeOfDay.fromDateTime(testTime))}',
+        'Scheduled Test Notification ⏰',
+        'This is a scheduled notification for testing at ${_formatTimeOfDay(TimeOfDay.fromDateTime(testTime))}',
         scheduledDate,
         const NotificationDetails(
           android: AndroidNotificationDetails(
             'test_channel',
-            'اختبار',
-            channelDescription: 'قناة اختبار الإشعارات',
+            'Test',
+            channelDescription: 'Test notification channel',
             importance: Importance.high,
             priority: Priority.high,
             icon: '@mipmap/ic_launcher',
@@ -348,9 +358,64 @@ class NotificationService {
         payload: 'test_scheduled',
       );
 
-      log('تم جدولة إشعار الاختبار في: $testTime');
+      log('Scheduled test notification at: $testTime');
     } catch (e) {
-      log('خطأ في جدولة إشعار الاختبار: $e');
+      log('Error scheduling test notification: $e');
+    }
+  }
+
+  /// جدولة إشعار التقرير اليومي في نهاية اليوم
+  static Future<void> scheduleDailyReportNotification({
+    int hour = 23,
+    int minute = 0,
+  }) async {
+    try {
+      final now = tz.TZDateTime.now(tz.local);
+      var scheduledDate = tz.TZDateTime(
+        tz.local,
+        now.year,
+        now.month,
+        now.day,
+        hour,
+        minute,
+      );
+      // إذا كان الوقت قد مضى اليوم، جدوله للغد
+      if (scheduledDate.isBefore(now)) {
+        scheduledDate = scheduledDate.add(const Duration(days: 1));
+      }
+      await _notifications.zonedSchedule(
+        10001, // Unique ID for daily report notification
+        'Your Daily Report is Ready! 📊',
+        'Tap to send your daily report to Telegram',
+        scheduledDate,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'daily_report_channel',
+            'Daily Report',
+            channelDescription:
+                'Notification reminder to send daily report to Telegram',
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+            color: Color(0xFF0088CC),
+            enableVibration: true,
+            playSound: true,
+            autoCancel: true,
+          ),
+          iOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+            badgeNumber: 1,
+          ),
+        ),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        payload: 'daily_report',
+        matchDateTimeComponents: DateTimeComponents.time, // يومياً
+      );
+      log('Daily report notification scheduled at $hour:$minute');
+    } catch (e) {
+      log('Error scheduling daily report notification: $e');
     }
   }
 }

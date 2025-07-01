@@ -435,7 +435,6 @@ class _TasksScreenState extends State<TasksScreen>
           ),
         ),
       ),
-      floatingActionButton: _buildFloatingActionButton(),
     );
   }
 
@@ -1156,24 +1155,5 @@ class _TasksScreenState extends State<TasksScreen>
         _loadTasksBasedOnFilter();
       }
     });
-  }
-
-  Widget _buildFloatingActionButton() {
-    return FloatingActionButton.extended(
-      onPressed: () {
-        context.push('/create-task');
-      },
-      backgroundColor: const Color(0xFF4F46E5),
-      elevation: 8,
-      icon: Icon(Icons.add, color: Colors.white, size: 24.sp),
-      label: Text(
-        'New Task',
-        style: GoogleFonts.poppins(
-          color: Colors.white,
-          fontWeight: FontWeight.w600,
-          fontSize: 14.sp,
-        ),
-      ),
-    );
   }
 }

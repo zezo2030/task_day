@@ -4,19 +4,27 @@ import 'package:task_day/core/themes/app_theme.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:task_day/services/hive_service.dart';
 import 'package:task_day/services/notification_service.dart';
+import 'package:task_day/services/send_telegram_service.dart';
 import 'package:task_day/core/router/app_route.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:task_day/controller/habit_cubit/habit_cubit.dart';
 import 'package:task_day/controller/status_cubit/status_cubit.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Arabic locale data
+  await initializeDateFormatting('ar');
 
   // Initialize Hive
   await HiveService.init();
 
   // Initialize Notifications
   await NotificationService.initialize();
+
+  // Initialize Telegram Service
+  await TelegramService.init();
 
   runApp(const MainApp());
 }
